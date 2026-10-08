@@ -4,13 +4,14 @@
  * Builds the form from schema descriptors and keeps no state of its own:
  *   - common options: the seven keys of state.options (density, motifScale, strokeScale,
  *     seed, tileMode, ink, paper), written through onOptionChange(key, value);
- *   - per layer of the selected preset: the archetype PARAMS (src/archetypes/<type>.js) and
- *     the motif fields (src/motifs/*.js), written through onOverrideChange(JSON Pointer, value).
+ *   - per layer of the selected preset: the scalar archetype PARAMS (src/archetypes/<type>.js) and
+ *     motif fields (src/motifs/*.js), written through onOverrideChange(JSON Pointer, value).
+ *     Structural data (arrays, strings) is not shown; visibleFields() in paramModel.js decides.
  * An input outside the descriptor (range, candidates, type) is rejected: nothing is written,
  * the previous valid value stays, and the reason is shown in Japanese.
  * Colours: ink and paper only (docs/CONVENTIONS.md §5). Styles: site/assets/ui/paramPanel.css.
  *
- * The top level touches no DOM, so the pure helpers can be imported from node.
+ * The pure helpers live in paramModel.js (node:test).
  */
 
 import { getPreset } from '../../../src/index.js';
@@ -18,6 +19,7 @@ import { ARCHETYPES } from '../../../src/archetypes/index.js';
 import { MOTIFS } from '../../../src/motifs/index.js';
 import { OPTIONS } from '../../../src/core/schema.js';
 import { DEFAULT_INK, DEFAULT_PAPER, isColor } from '../../../src/core/colors.js';
+import { checkValue, editableDescriptor, visibleFields, isWideField, layerHeading } from './paramModel.js';
 
 /** Descriptors of the common options (state.options), with the display defaults of CONTRACT §1. */
 const COMMON = {
@@ -58,7 +60,7 @@ export const LABEL_JA = Object.freeze({
   shift: 'ずれ', outerLen: '外側の長さ', innerLen: '内側の長さ', drop: '下がり', jog: '段差',
   stemLen: '幹の長さ', armLen: '腕の長さ', chord: '弦の長さ', secondOffset: '2 本目のずれ',
   rungs: '横木の本数', rungLengthMin: '横木の最小長', rungLengthMax: '横木の最大長', vertices: '頂点数',
-  irregularity: '不規則さ', d: '直径・パス (d)', w: '全幅', h: '全高', x: 'x', y: 'y',
+  irregularity: '不規則さ', d: '直径', w: '全幅', h: '全高', x: 'x', y: 'y',
   left: '左', right: '右', top: '上', bottom: '下', pt: '値 (pt)',
 });
 
@@ -92,55 +94,6 @@ function getAt(root, path) {
     o = o[k];
   }
   return o;
-}
-
-/** True when the descriptor can be shown on this screen. */
-export function isEditable(desc) {
-  if (['number', 'integer', 'enum', 'boolean', 'string'].includes(desc.type)) return true;
-  if (desc.type === 'union') return desc.options.some(isEditable);
-  if (desc.type === 'object') return Object.values(desc.fields).every(isEditable);
-  return false;
-}
-
-/**
- * Check one value against its descriptor. `undefined` means "not given": allowed unless required.
- * Returns a reason in Japanese: `error` rejects the input, `warn` keeps it and shows a note.
- * @param {object} desc
- * @param {unknown} value
- * @returns {{error: string|null, warn: string|null}}
- */
-export function checkValue(desc, value) {
-  const ok = { error: null, warn: null };
-  const fail = (error) => ({ error, warn: null });
-  if (value === undefined) return { error: desc.required ? '必須の項目です' : null, warn: null };
-  switch (desc.type) {
-    case 'number':
-    case 'integer': {
-      if (typeof value !== 'number' || !Number.isFinite(value)) return fail('数値を入力してください');
-      if (desc.type === 'integer' && !Number.isInteger(value)) return fail('整数を入力してください');
-      if (desc.min !== undefined && value < desc.min) return fail(`${desc.min} 以上にしてください`);
-      if (desc.max !== undefined && value > desc.max) return fail(`${desc.max} 以下にしてください`);
-      if (desc.exclusiveMin !== undefined && value <= desc.exclusiveMin) return fail(`${desc.exclusiveMin} より大きくしてください`);
-      if ((desc.softMin !== undefined && value < desc.softMin) || (desc.softMax !== undefined && value > desc.softMax)) {
-        return { error: null, warn: `推奨範囲 ${desc.softMin ?? '-∞'} 〜 ${desc.softMax ?? '∞'} の外です。この値のまま描きます` };
-      }
-      return ok;
-    }
-    case 'enum':
-      return desc.values.includes(value) ? ok : fail('候補から選んでください');
-    case 'boolean':
-      return typeof value === 'boolean' ? ok : fail('オンかオフで指定してください');
-    case 'string':
-      if (typeof value !== 'string') return fail('文字列で入力してください');
-      if (desc.pattern && !desc.pattern.test(value)) return fail('形式が合いません');
-      return ok;
-    case 'union':
-      return desc.options.some((o) => checkValue(o, value).error === null) ? ok : fail('どの指定方法にも合いません');
-    case 'object':
-      return value !== null && typeof value === 'object' && !Array.isArray(value) ? ok : fail('内訳で指定してください');
-    default:
-      return fail('この画面からは入力できません');
-  }
 }
 
 /** Label of one alternative of a union (the way the value is specified). */
@@ -205,8 +158,6 @@ export function mountParamPanel(container, props = {}) {
   let state = props.state ?? { presetId: null, options: {}, overrides: {} };
   let builtFor = null;
   let syncers = [];
-  let unsupported = [];
-  let notes = [];
   let currentArchetype = '';
 
   const labelOf = (key) => ARCH_LABEL_JA[currentArchetype]?.[key] ?? LABEL_JA[key] ?? key;
@@ -221,12 +172,14 @@ export function mountParamPanel(container, props = {}) {
   });
 
   const overrideBinding = (pointer, base) => ({
+    pointer,
     get: () => (state.overrides?.[pointer] !== undefined ? state.overrides[pointer] : base),
     set: (v) => onOverrideChange(pointer, v),
   });
 
   /** Binding of one key inside an object-valued binding: writes the whole object back. */
   const childBinding = (parent, key) => ({
+    pointer: parent.pointer,
     get: () => {
       const p = parent.get();
       return p !== null && typeof p === 'object' ? p[key] : undefined;
@@ -239,12 +192,15 @@ export function mountParamPanel(container, props = {}) {
     },
   });
 
-  /** Title and key name, with the required mark and the reference tooltip. */
-  function header(title, keyName, desc) {
+  /**
+   * Title with the required mark. The tooltip gives the report section and, for a layer value,
+   * the JSON Pointer to write in the settings JSON (overrides). No internal key name is shown.
+   */
+  function header(title, desc, binding) {
     const t = el('div', 'pp-title', title);
     if (desc.required) t.append(el('span', 'pp-badge', '必須'));
-    t.title = referenceOf(desc);
-    return [t, el('div', 'pp-key', keyName)];
+    t.title = binding?.pointer ? `${referenceOf(desc)}\n設定 JSON の overrides: ${binding.pointer}` : referenceOf(desc);
+    return [t];
   }
 
   /** The one write path: check, then set; a rejected input writes nothing. */
@@ -356,34 +312,19 @@ export function mountParamPanel(container, props = {}) {
     return [label];
   }
 
-  function stringControls(desc, binding, title, msg) {
-    const input = el('input', 'pp-text');
-    input.type = 'text';
-    input.setAttribute('aria-label', title);
-    input.addEventListener('input', () => {
-      commit(desc, binding, input.value === '' ? undefined : input.value, msg);
-    });
-    syncers.push(() => {
-      const v = binding.get() ?? desc.default;
-      if (document.activeElement !== input) input.value = typeof v === 'string' ? v : '';
-    });
-    return [input];
-  }
-
   /**
    * One field for a descriptor. `bare` omits the title block (used for the alternatives of a union).
-   * Returns null (and records the key as unsupported) when the descriptor cannot be shown.
+   * Returns null when the descriptor has no form this screen shows (editableDescriptor).
    */
-  function fieldNode(desc, binding, keyName, title, bare = false) {
-    if (!isEditable(desc)) {
-      unsupported.push(keyName);
-      return null;
-    }
+  function fieldNode(rawDesc, binding, title, bare = false) {
+    const desc = editableDescriptor(rawDesc);
+    if (!desc) return null;
+    const boxClass = () => (bare ? 'pp-bare' : `pp-field${isWideField(desc, title) ? ' pp-wide' : ''}`);
     if (desc.type === 'object') {
-      const box = el('div', bare ? 'pp-bare' : 'pp-field');
-      if (!bare) box.append(...header(title, keyName, desc));
+      const box = el('div', boxClass());
+      if (!bare) box.append(...header(title, desc, binding));
       for (const [ck, cd] of Object.entries(desc.fields)) {
-        const child = fieldNode(cd, childBinding(binding, ck), `${keyName}.${ck}`, labelOf(ck), false);
+        const child = fieldNode(cd, childBinding(binding, ck), labelOf(ck), false);
         if (child) box.append(child);
       }
       return box;
@@ -393,16 +334,10 @@ export function mountParamPanel(container, props = {}) {
       const inherit = (o) => (o.default === undefined && desc.default !== undefined && checkValue(o, desc.default).error === null
         ? { ...o, default: desc.default }
         : o);
-      const opts = desc.options.filter(isEditable).map(inherit);
-      const dropped = desc.options.filter((o) => !isEditable(o));
-      if (dropped.length) notes.push(`${keyName} の「${dropped.map(modeLabel).join('・')}」`);
-      if (opts.length === 0) {
-        unsupported.push(keyName);
-        return null;
-      }
-      if (opts.length === 1) return fieldNode(opts[0], binding, keyName, title, bare);
-      const box = el('div', bare ? 'pp-bare' : 'pp-field');
-      if (!bare) box.append(...header(title, keyName, desc));
+      const opts = desc.options.map(inherit);
+      if (opts.length === 1) return fieldNode(opts[0], binding, title, bare);
+      const box = el('div', boxClass());
+      if (!bare) box.append(...header(title, desc, binding));
       const mode = el('select', 'pp-select');
       mode.setAttribute('aria-label', `${title} の指定方法`);
       opts.forEach((o, i) => mode.append(new Option(modeLabel(o), String(i))));
@@ -412,7 +347,7 @@ export function mountParamPanel(container, props = {}) {
       const renderSlot = (i) => {
         slot.replaceChildren();
         if (single(opts[i])) return;
-        const n = fieldNode(opts[i], binding, keyName, title, true);
+        const n = fieldNode(opts[i], binding, title, true);
         if (n) slot.append(n);
       };
       const activeIndex = () => {
@@ -440,8 +375,8 @@ export function mountParamPanel(container, props = {}) {
       box.append(modeRow, slot);
       return box;
     }
-    const box = el('div', bare ? 'pp-bare' : 'pp-field');
-    if (!bare) box.append(...header(title, keyName, desc));
+    const box = el('div', boxClass());
+    if (!bare) box.append(...header(title, desc, binding));
     const msg = el('p', 'pp-msg');
     msg.hidden = true;
     let controls;
@@ -453,11 +388,8 @@ export function mountParamPanel(container, props = {}) {
       case 'enum':
         controls = enumControls(desc, binding, title, msg);
         break;
-      case 'boolean':
-        controls = booleanControls(desc, binding, title, msg);
-        break;
       default:
-        controls = stringControls(desc, binding, title, msg);
+        controls = booleanControls(desc, binding, title, msg);
     }
     const reset = el('button', 'pp-reset', '既定値へ戻す');
     reset.type = 'button';
@@ -471,11 +403,11 @@ export function mountParamPanel(container, props = {}) {
     return box;
   }
 
-  /** Field nodes for the entries of one descriptor object (an archetype's PARAMS or a motif's fields). */
-  function fieldsFor(fields, makeBinding) {
+  /** Field nodes for the shown entries of one descriptor object (visibleFields in paramModel.js). */
+  function fieldsFor(fields, base, ctx, makeBinding) {
     const out = [];
-    for (const [key, desc] of Object.entries(fields)) {
-      const node = fieldNode(desc, makeBinding(key), key, labelOf(key));
+    for (const { key, desc } of visibleFields(fields, base, ctx)) {
+      const node = fieldNode(desc, makeBinding(key), labelOf(key));
       if (node) out.push(node);
     }
     return out;
@@ -487,18 +419,11 @@ export function mountParamPanel(container, props = {}) {
     return sec;
   }
 
-  /** Note line for what the screen cannot change in this layer. */
-  function unsupportedNote(prefix) {
-    const list = [...unsupported.map((k) => `${prefix}${k}`), ...notes];
-    if (!list.length) return null;
-    return el('p', 'pp-unsupported', `この画面では変えられない項目(spec 側で指定します): ${list.join('、')}`);
-  }
-
   /** Common options: density, motifScale, strokeScale, seed, tileMode, then the two colours. */
   function commonSection() {
     const nodes = [];
     for (const [key, desc] of Object.entries(COMMON)) {
-      const node = fieldNode(desc, optionBinding(key), key, labelOf(key));
+      const node = fieldNode(desc, optionBinding(key), labelOf(key));
       if (node) nodes.push(node);
     }
     // ink and paper: exactly two colour inputs (CONVENTIONS §5); no third colour is offered.
@@ -511,7 +436,7 @@ export function mountParamPanel(container, props = {}) {
     for (const [key, fallback] of [['ink', DEFAULT_INK], ['paper', DEFAULT_PAPER]]) {
       const title = labelOf(key);
       const box = el('div', 'pp-field');
-      box.append(...header(title, key, { desc: '' }));
+      box.append(...header(title, { desc: '' }));
       const input = el('input', 'pp-color');
       input.type = 'color';
       input.setAttribute('aria-label', title);
@@ -537,6 +462,7 @@ export function mountParamPanel(container, props = {}) {
         code.textContent = v;
       });
     }
+    colorMsg.classList.add('pp-wide');
     nodes.push(colorMsg);
     syncers.push(() => {
       const ink = colorOf('ink', DEFAULT_INK);
@@ -562,32 +488,29 @@ export function mountParamPanel(container, props = {}) {
       }
     }
     head.append(el('p', 'pp-title', spec ? (spec.names?.ja ?? spec.id) : 'プリセットを選んでください'));
-    if (spec) head.append(el('p', 'pp-key', spec.id));
     const sections = [head, commonSection()];
 
     if (spec) {
       spec.layers.forEach((layer, i) => {
-        unsupported = [];
-        notes = [];
         currentArchetype = layer.archetype;
         const arch = ARCHETYPES[layer.archetype];
         if (!arch) {
           sections.push(el('p', 'pp-error', `未知の型です: ${layer.archetype}`));
           return;
         }
-        const nodes = fieldsFor(arch.PARAMS.fields, (key) => overrideBinding(`/layers/${i}/params/${key}`, getAt(layer, ['params', key])));
+        const ctx = { archetype: layer.archetype, params: layer.params ?? {} };
+        const nodes = fieldsFor(arch.PARAMS.fields, layer.params ?? {}, ctx,
+          (key) => overrideBinding(`/layers/${i}/params/${key}`, getAt(layer, ['params', key])));
         const motifDesc = layer.motif ? MOTIFS[layer.motif.kind]?.descriptor : null;
         if (motifDesc) {
           const fields = Object.fromEntries(Object.entries(motifDesc.fields).filter(([k]) => k !== 'kind'));
-          nodes.push(...fieldsFor(fields, (key) => overrideBinding(`/layers/${i}/motif/${key}`, getAt(layer, ['motif', key]))));
+          nodes.push(...fieldsFor(fields, layer.motif, {},
+            (key) => overrideBinding(`/layers/${i}/motif/${key}`, getAt(layer, ['motif', key]))));
         }
-        const sec = section(`層 ${layer.id} (${layer.archetype}${motifDesc ? `・モチーフ ${layer.motif.kind}` : ''})`, nodes);
-        const note = unsupportedNote(`${layer.id}.`);
-        if (note) sec.append(note);
-        sections.push(sec);
+        if (nodes.length) sections.push(section(layerHeading(layer, i, spec.layers.length), nodes));
       });
     } else {
-      sections.push(el('p', 'pp-unsupported', '一覧から模様を選ぶと、ここに型とモチーフの入力欄が出ます。'));
+      sections.push(el('p', 'pp-hint', '一覧から模様を選ぶと、ここに模様の入力欄が出ます。'));
     }
     root.replaceChildren(...sections);
     for (const s of syncers) s();

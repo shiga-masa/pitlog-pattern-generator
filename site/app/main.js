@@ -23,6 +23,7 @@ import { mountCatalog } from './ui/catalog.js';
 import { mountParamPanel } from './ui/paramPanel.js';
 import { mountPreview } from './ui/preview.js';
 import { mountExportPanel } from './ui/exportPanel.js';
+import { formatSettings, parseSettings } from './ui/settingsJson.js';
 
 const app = document.getElementById('app');
 
@@ -45,18 +46,23 @@ const shareBar = el('div', { class: 'share' }, [
   el('p', { class: 'share-label', text: '共有リンク(設定を含む)' }),
   el('div', { class: 'share-row' }, [linkField, copyButton]),
 ]);
-const overridesBox = el('section', { id: 'overrides-json', class: 'block' }, [
+const settingsText = el('textarea', { id: 'settings-json', rows: '16', spellcheck: 'false', 'aria-label': '設定 JSON' });
+const settingsRevert = el('button', { id: 'settings-revert', type: 'button', text: '現在の値に戻す' });
+const settingsStatus = el('p', { id: 'settings-status', class: 'hint', 'aria-live': 'polite' });
+const settingsLong = el('p', { id: 'settings-long', class: 'hint settings-long', hidden: '' });
+const settingsBox = el('section', { id: 'settings-json-block', class: 'block' }, [
   el('h3', { text: '設定 JSON' }),
   el('p', {
     class: 'hint',
-    text: '層の変更が多く共有リンクに載せきれないときは、下の欄の JSON をコピーして保存してください。保存した JSON は下の入力欄に貼って「読み込む」で復元できます。',
+    text: '今の指定(模様の ID、共通変数、上の欄で変えた層の値)です。上の欄を動かすとすぐに書き換わります。'
+      + 'この欄を直接書き換えると、その場で模様と上の欄に反映します(JSON として正しくない間は、最後に正しかった指定のまま描きます)。'
+      + 'コピーして保存しておけば、貼り付けるだけで復元できます。'
+      + 'ライブラリでは renderSVG(preset, options) にそのまま渡せます。',
   }),
-  el('textarea', { id: 'overrides-export', rows: '6', readonly: '', 'aria-label': '設定 JSON(出力)', hidden: '' }),
-  el('textarea', { id: 'overrides-input', rows: '4', 'aria-label': '設定 JSON(読み込み)' }),
-  el('div', { class: 'share-row' }, [
-    el('button', { id: 'overrides-load', type: 'button', text: '読み込む' }),
-  ]),
-  el('p', { id: 'overrides-status', class: 'hint' }),
+  settingsLong,
+  settingsText,
+  el('div', { class: 'share-row' }, [settingsRevert]),
+  settingsStatus,
 ]);
 
 const catalogBox = el('section', { id: 'catalog', class: 'catalog-block', 'aria-label': '模様の一覧' });
@@ -70,7 +76,7 @@ const paramBox = el('div', { id: 'param-panel' });
 const exportBox = el('div', { id: 'export-panel' });
 const settings = el('details', { class: 'settings' }, [
   el('summary', { text: '詳細設定' }),
-  el('div', { class: 'settings-body' }, [paramBox, overridesBox]),
+  el('div', { class: 'settings-body' }, [paramBox, settingsBox]),
 ]);
 const detail = el('section', { id: 'detail', class: 'detail block', 'aria-labelledby': 'detail-name', hidden: '' }, [
   el('div', { class: 'detail-head' }, [
@@ -164,34 +170,79 @@ const mounts = [
   }),
 ];
 
-/* ---------- share link, URL write-back, overrides JSON ---------- */
+/* ---------- share link, URL write-back, settings JSON ---------- */
 
-const overridesExport = overridesBox.querySelector('#overrides-export');
-const overridesInput = overridesBox.querySelector('#overrides-input');
-const overridesStatus = overridesBox.querySelector('#overrides-status');
 const base = location.href.split(/[?#]/)[0];
 
-/** Replaces all overrides with the JSON object in `text`. Throws on bad input. */
-function importOverrides(text) {
-  const parsed = JSON.parse(text);
-  if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
-    throw new Error('設定 JSON はオブジェクトである必要があります');
-  }
-  const bad = Object.keys(parsed).filter((k) => !/^\/./.test(k));
-  if (bad.length > 0) throw new Error(`設定 JSON のキーは "/" で始まる JSON Pointer にしてください: ${bad.join(', ')}`);
-  for (const k of Object.keys(getState().overrides)) setOverride(k, undefined);
-  for (const [k, v] of Object.entries(parsed)) setOverride(k, v);
+/* Settings JSON (CONTRACT.md §2.1). Two-way and immediate:
+ * - every state change rewrites the text, except while the field has focus (the caret and the
+ *   user's text stay as they are);
+ * - every edit of the text is checked as a whole (parseSettings) and, when valid, applied at once;
+ *   while it is invalid the last valid settings stay and the reason is shown in Japanese. */
+let settingsInvalid = false;
+
+function showSettingsStatus(kind, text) {
+  settingsStatus.textContent = text;
+  settingsStatus.classList.toggle('settings-error', kind === 'error');
 }
 
-overridesBox.querySelector('#overrides-load').addEventListener('click', () => {
-  try {
-    importOverrides(overridesInput.value);
-    overridesStatus.textContent = '読み込みました。';
-    clearWarning('overrides-json');
-  } catch (e) {
-    setWarning('overrides-json', `設定 JSON を読み込めません: ${e.message}`);
-    overridesStatus.textContent = '';
+function syncSettings(state) {
+  if (document.activeElement === settingsText) return;
+  const text = formatSettings(state);
+  if (settingsText.value === text) return;
+  settingsText.value = text;
+  if (settingsInvalid) {
+    // An unfinished invalid text is replaced by the current settings once the state moves on.
+    settingsInvalid = false;
+    showSettingsStatus('none', '');
   }
+}
+
+/** Applies a checked settings object to the state; only the keys that differ are written. */
+function applySettings(r) {
+  const cur = getState();
+  if (r.presetId !== cur.presetId) {
+    chosenRowId = null;
+    selectPreset(r.presetId);
+  }
+  const now = getState().overrides;
+  for (const k of Object.keys(now)) if (!(k in r.overrides)) setOverride(k, undefined);
+  for (const [k, v] of Object.entries(r.overrides)) {
+    if (JSON.stringify(now[k]) !== JSON.stringify(v)) setOverride(k, v);
+  }
+  const opts = getState().options;
+  for (const [k, v] of Object.entries(r.options)) if (opts[k] !== v) setOption(k, v);
+}
+
+settingsText.addEventListener('input', () => {
+  const r = parseSettings(settingsText.value, { currentPresetId: getState().presetId });
+  if (!r.ok) {
+    settingsInvalid = true;
+    showSettingsStatus('error', `反映できません: ${r.error}。直前の正しい指定のまま描いています。`);
+    return;
+  }
+  try {
+    applySettings(r);
+  } catch (e) {
+    // parseSettings checked everything, so this is a bug; show it, never swallow it.
+    settingsInvalid = true;
+    showSettingsStatus('error', `反映の途中で失敗しました: ${e.message}`);
+    return;
+  }
+  settingsInvalid = false;
+  showSettingsStatus('none', '反映しました。');
+});
+
+// Leaving the field: a valid text is rewritten in the standard form; an invalid one is kept so
+// the user can fix it ("現在の値に戻す" discards it).
+settingsText.addEventListener('blur', () => {
+  if (!settingsInvalid) syncSettings(getState());
+});
+
+settingsRevert.addEventListener('click', () => {
+  settingsInvalid = false;
+  settingsText.value = formatSettings(getState());
+  showSettingsStatus('none', '');
 });
 
 copyButton.addEventListener('click', async () => {
@@ -211,10 +262,11 @@ function writeBack(state) {
   linkField.value = `${base}${search}`;
   copyButton.textContent = 'リンクをコピー';
 
-  overridesExport.hidden = !overridesTooLong;
-  if (overridesTooLong) {
-    overridesExport.value = JSON.stringify(state.overrides, null, 2);
-  }
+  settingsLong.hidden = !overridesTooLong;
+  settingsLong.textContent = overridesTooLong
+    ? '層の変更が多く、共有リンクに載せきれません(リンクには模様と共通変数だけが入ります)。下の設定 JSON をコピーして保存してください。'
+    : '';
+  syncSettings(state);
 
   try {
     history.replaceState(null, '', `${location.pathname}${search}`);

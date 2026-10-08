@@ -3,6 +3,8 @@
  * Two colours only (--earth, --white), solid rules, no radius, shadow, opacity or italics.
  * Hierarchy: size and weight; a warning is shown in bold or underlined, never in another colour.
  * Works at 360 px: rows wrap, nothing is wider than the column.
+ * From 900 px the fields of a group sit in two columns; headings, object-valued fields, long
+ * titles (.pp-wide, chosen by isWideField in paramModel.js) and messages span both.
  */
 
 .pp {
@@ -73,12 +75,6 @@
   font-size: 0.75rem;
   font-weight: 700;
   border: 1px solid var(--earth);
-}
-
-.pp-key {
-  font-family: ui-monospace, Menlo, Consolas, "DejaVu Sans Mono", monospace;
-  font-size: 0.75rem;
-  overflow-wrap: anywhere;
 }
 
 .pp-row {
@@ -227,12 +223,24 @@
   text-decoration: underline;
 }
 
-.pp-unsupported {
+.pp-hint {
   font-size: 0.875rem;
   line-height: 1.5;
-  padding-top: 8px;
-  border-top: 1px solid var(--earth);
   overflow-wrap: anywhere;
+}
+
+@media (min-width: 900px) {
+  .pp-group {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 32px;
+    align-items: start;
+  }
+
+  .pp-group > .pp-section,
+  .pp-group > .pp-wide,
+  .pp-group > .pp-msg {
+    grid-column: 1 / -1;
+  }
 }
 
 .pp-error {

@@ -47,30 +47,34 @@ function isPositiveNumber(v) {
   return typeof v === 'number' && Number.isFinite(v) && v > 0;
 }
 
+const OPTION_RULES = Object.freeze({
+  density: [(v) => isPositiveNumber(v), '0 より大きい数値にしてください'],
+  motifScale: [(v) => v === 'follow' || isPositiveNumber(v), '"follow" か 0 より大きい数値にしてください'],
+  strokeScale: [(v) => v === 'follow' || isPositiveNumber(v), '"follow" か 0 より大きい数値にしてください'],
+  seed: [(v) => Number.isInteger(v) && v >= 0 && v <= 0xffffffff, '0 〜 4294967295 の整数にしてください'],
+  tileMode: [(v) => TILE_MODES.includes(v), `${TILE_MODES.map((m) => `"${m}"`).join(' / ')} のどれかにしてください`],
+  ink: [(v) => typeof v === 'string' && HEX_COLOR.test(v), '"#rrggbb" 形式の色にしてください'],
+  paper: [(v) => typeof v === 'string' && HEX_COLOR.test(v), '"#rrggbb" 形式の色にしてください'],
+});
+
+/**
+ * Reason in Japanese why `v` cannot be the common option `key`, or null when it can. Pure.
+ * Unknown keys throw with the candidates.
+ */
+export function optionError(key, v) {
+  const rule = OPTION_RULES[key];
+  if (!rule) throw new Error(`Unknown option "${key}"; known: ${OPTION_KEYS.join(', ')}`);
+  return rule[0](v) ? null : rule[1];
+}
+
+/** Default value of each common option (CONTRACT.md §1). */
+export function optionDefault(key) {
+  if (!(key in OPTION_DEFAULTS)) throw new Error(`Unknown option "${key}"; known: ${OPTION_KEYS.join(', ')}`);
+  return OPTION_DEFAULTS[key];
+}
+
 function checkOptionValue(key, v) {
-  let ok;
-  switch (key) {
-    case 'density':
-      ok = isPositiveNumber(v);
-      break;
-    case 'motifScale':
-    case 'strokeScale':
-      ok = v === 'follow' || isPositiveNumber(v);
-      break;
-    case 'seed':
-      ok = Number.isInteger(v) && v >= 0 && v <= 0xffffffff;
-      break;
-    case 'tileMode':
-      ok = TILE_MODES.includes(v);
-      break;
-    case 'ink':
-    case 'paper':
-      ok = typeof v === 'string' && HEX_COLOR.test(v);
-      break;
-    default:
-      throw new Error(`Unknown option "${key}"; known: ${OPTION_KEYS.join(', ')}`);
-  }
-  if (!ok) throw new Error(`options.${key}: invalid value ${JSON.stringify(v)}`);
+  if (optionError(key, v) !== null) throw new Error(`options.${key}: invalid value ${JSON.stringify(v)}`);
 }
 
 function checkOutputValue(key, v) {

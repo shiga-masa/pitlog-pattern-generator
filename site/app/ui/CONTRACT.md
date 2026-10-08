@@ -41,6 +41,8 @@ state.js の export:
 | `subscribe(fn)` | `fn(stateCopy)` を変更のたびに呼ぶ。解除関数を返す |
 | `selectPreset(id)` | `presetId` を設定し `overrides` を空にする。`id` は正規 ID 前提(解決は呼び出し側) |
 | `setOption(key, value)` | 共通変数を設定。`value === undefined` でキーを削除(既定に戻す)。未知の key は候補付きで例外 |
+| `optionError(key, value)` | 共通変数の値が使えない理由(日本語)、使えるときは `null`(純粋関数)。未知の key は候補付きで例外。`setOption` と設定 JSON(§2.1)が同じ規則を使う |
+| `optionDefault(key)` | 共通変数の既定値(上の表の値) |
 | `setOverride(pointer, value)` | JSON Pointer(先頭 `/`)の上書き。`value === undefined` で削除。書式違反は例外 |
 | `setOutput(patch)` | `output` の一部を上書き |
 | `buildRenderOptions(state, {forExport})` | ライブラリ(`renderSVG` / `renderPNG`)へ渡す options を作る(純粋関数)。下記 §1.1 |
@@ -74,7 +76,7 @@ state.js の export:
 | `o` | overrides の JSON を base64url 化したもの(上限 `OVERRIDES_MAX_CHARS`) | `overrides` |
 
 - 既定値と同じ値は URL に載せない(`encodeShareQuery` が省く)。
-- `overridesTooLong` が true のとき `o` は URL に入れない。main.js がその JSON を画面に出して手でコピーさせる。
+- `overridesTooLong` が true のとき `o` は URL に入れない。main.js は設定 JSON 欄(§2.1)の上に「共有リンクに載せきれません。設定 JSON をコピーして保存してください」を出す。
 
 ---
 
@@ -87,13 +89,30 @@ state.js の export:
   - `#detail` 選択中の模様の詳細領域。`presetId` が null のときは隠す。中身は次の順:
     1. `#detail-name` 名称(別名タイルから選んだときはその名称と「別名(= 参照先)」)と「一覧へ戻る」
     2. `#preview` → `mountPreview`(大きめのプレビュー)
-    3. `<details class="settings">`「詳細設定」(初期は閉)の中に `#param-panel` → `mountParamPanel` と `#overrides-json`(設定 JSON)
+    3. `<details class="settings">`「詳細設定」(初期は閉)の中に `#param-panel` → `mountParamPanel` と `#settings-json-block`(設定 JSON、§2.1)
     4. `#export-panel` → `mountExportPanel`(単位・幅・高さ・dpi と SVG / PNG のダウンロードボタン)
     5. 共有リンク(`#share-link` と「リンクをコピー」)
 - タイルを選ぶと詳細領域へスクロールする。URL に `id` があって復元したときも同じ。
 - 状態が変わるたびに main.js が各モジュールの `update(state)` を呼ぶ。
 - `history.replaceState` で URL を更新する(失敗しても無視せず、警告を出さずに続行はしない: try/catch で握るのは URL 更新だけ)。
 - 「リンクをコピー」ボタンは main.js が持つ。
+
+### 2.1 設定 JSON(`#settings-json-block`、純粋関数は `site/app/ui/settingsJson.js`)
+
+- 中身は「今の指定」そのもので、ライブラリにそのまま渡せる形:
+  ```json
+  { "preset": "zc:111300002",
+    "options": { "density": 1, "motifScale": "follow", "strokeScale": 1, "seed": 0,
+                 "tileMode": "frame", "ink": "#000000", "paper": "#ffffff",
+                 "overrides": { "/layers/0/params/rowPitches": [4.1, 4.3] } } }
+  ```
+  `renderSVG(json.preset, json.options)`(`renderPNG` も同じ)。共通変数は 7 キーすべてを現在値で書き(未設定は既定値で埋める)、`overrides` は空でも `{}` を書く。寸法・dpi(`output`)は書き出し欄の担当なので入れない。解決済みパラメータ全体の参考表示は出さない(ユーザーがコピー・編集して使う指定だけ)。
+- 双方向・即時:
+  - 状態が変わるたび(入力欄の `input` / `change` ごと、確定を待たない)に `formatSettings(state)` で書き直す。ただし **欄にフォーカスがある間は書き直さない**(カーソル位置と入力中の文字を守る)。
+  - 欄を編集するたび(`input`)に全文を `parseSettings(text, {currentPresetId})` で検査し、正しければその場で状態へ反映する(違うキーだけ setter を呼ぶ。`preset` が変わったら `selectPreset` を先に呼ぶ)。入力欄・プレビューはそれに追従する。
+  - 正しくない間は何も書き換えず、最後に正しかった指定のまま描き、欄の下に日本語の理由を出す(`反映できません: … 直前の正しい指定のまま描いています`)。フォーカスを外したとき、正しい文なら整形し直し、正しくない文は残す。「現在の値に戻す」で現在の指定に戻す。
+- `parseSettings` の検査(どれか 1 つでも不合格なら `{ok: false, error}` で、何も適用しない): JSON 構文、最上位キーは `preset` / `options` のみ、`preset` は `resolveId` で解決(省略時は現在の模様)、`options` のキーは 7 キー + `overrides` のみ(候補を列挙)、各値は `optionError`、`overrides` のキーは JSON Pointer、値は `toSpec(preset, {overrides})` で検査し、ライブラリのエラーは `issueJa` で日本語にする(パス付き。未知の文言は原文を括弧で残す)。既定値と同じ共通変数は `undefined`(= キーを省く)として返す。
+- 入力欄の無い構造データ(行ごとの間隔 `rowPitches` などの配列、モチーフの循環 `cycle`)は、この欄の `overrides` で変える。
 
 ---
 
@@ -147,9 +166,16 @@ mountParamPanel(container, {
 })
 ```
 - 共通変数(`options` の 7 キー)と、選択中プリセットの層・型変数・モチーフ変数を、スキーマ(`getPreset()` と各 archetype の PARAMS 記述子)から組み立てる。
+- **出すのはユーザーが調整するスカラー項目だけ**(数値・整数・候補・オン/オフ、およびそれだけでできた object / union)。判定は `site/app/ui/paramModel.js` の純粋関数:
+  - `editableDescriptor(desc)`: 配列(`cycle`, `rotations`, `rowPitches`, `colPitches`, `rowShifts`, scatter `angles` / `points`, diagonalBand `steps`, symbol `offsets` など)、文字列(grid `avoid`、path モチーフの `d`)、モチーフ列は `null`(欄を作らない)。union は配列の選択肢を落とす(hatch `angle` は数値だけ、edgeBand `rowY` は欄なし)。
+  - `visibleFields(fields, base, ctx)`: 上に加え、プリセットの値が欄で表せない形(hatch `angle` が配列など)のものと、相手のキーが無いと効かないもの(grid の `assign` / `phase` は `cycle` がある層だけ)を出さない。
+  - 「この画面では変えられない項目」のような注記は出さない。出さなかった項目は設定 JSON(§2.1)の `overrides` で変えられる。
+- 内部名を画面に出さない: 欄の下のキー名行(`pitchX` など)、層 ID(`sands` など)、型・モチーフのキー(`grid`, `dot`)は表示しない。層の見出しは `layerHeading()` で `層 1(格子配置・点)`(層が 1 つなら `模様(格子配置・横線)`)。キー名と JSON Pointer は欄見出しのツールチップにだけ書く(`設定 JSON の overrides: /layers/0/params/pitchX`)。
+- 配置: 画面幅 900 px 以上では各グループの欄を 2 列のグリッドに並べる(`grid-template-columns: repeat(2, minmax(0, 1fr))`)。見出し、2 つ以上の内訳を持つ object 欄(`margin` の辺ごと指定など)、見出しが 17 文字以上の欄(`isWideField()` が `.pp-wide` を付ける)、色の警告は 2 列にまたがる。900 px 未満は 1 列。
 - 色の入力は `ink` と `paper` の 2 つだけ。
-- 各欄に既定値へ戻すボタン、根拠(報告の節番号)のツールチップ。
+- 各欄に既定値へ戻すボタン、根拠(報告の節番号)のツールチップ。範囲外・型違いの入力は日本語の理由を出して書き込まず、直前の値を保つ(`checkValue`)。
 - `presetId` が null のときは「プリセットを選んでください」を出す。
+- 純粋関数(node:test 用、DOM 無し、`paramModel.js`): `editableDescriptor`, `isEditable`, `checkValue`, `visibleFields`, `isWideField`, `layerHeading`(`ARCHETYPE_JA`, `MOTIF_JA`)。`settingsJson.js`: `buildSettings`, `formatSettings`, `parseSettings`, `issueJa`。
 
 ### 4.3 preview.js(app-3)
 

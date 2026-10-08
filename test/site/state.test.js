@@ -77,3 +77,13 @@ test('decodeShareQuery warns on a broken overrides parameter', () => {
   assert.equal(r.warnings.length, 1);
   assert.deepEqual(r.state.overrides, {});
 });
+
+test('optionError gives a Japanese reason for an invalid common option and null for a valid one', async () => {
+  const { optionError, optionDefault } = await import('../../site/app/state.js');
+  assert.equal(optionError('density', 2), null);
+  assert.match(optionError('density', 0), /0 より大きい/);
+  assert.match(optionError('seed', 1.5), /整数/);
+  assert.match(optionError('tileMode', 'x'), /"frame"/);
+  assert.throws(() => optionError('dpi', 300), /known: density/);
+  assert.equal(optionDefault('motifScale'), 'follow');
+});

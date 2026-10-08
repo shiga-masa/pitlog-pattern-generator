@@ -202,9 +202,7 @@ img {
 }
 
 .share-row input,
-#share-link,
-#overrides-export,
-#overrides-input {
+#share-link {
   flex: 1 1 200px;
   width: 100%;
 }
@@ -215,12 +213,21 @@ textarea {
   font-size: 0.875rem;
 }
 
-#overrides-json textarea + textarea {
+#settings-json {
   margin-top: 8px;
+  white-space: pre;
+  overflow-x: auto;
 }
 
-#overrides-json[hidden],
-#overrides-export[hidden],
+.settings-error,
+.settings-long {
+  font-weight: 700;
+  border-left: 4px solid var(--earth);
+  padding-left: 8px;
+  overflow-wrap: anywhere;
+}
+
+#settings-long[hidden],
 #warnings[hidden] {
   display: none;
 }
