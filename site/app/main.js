@@ -138,6 +138,7 @@ setOutput(initial.output);
 
 let chosenRowId = null; // tile id the user clicked
 let chosenCanonical = null; // resolveId() of that tile
+let scrollToDetail = initial.presetId !== null; // only when opened from a share link; tile clicks never scroll
 
 const catalog = mountCatalog(catalogBox, {
   state: getState(),
@@ -254,6 +255,10 @@ function renderDetail(state) {
     parts.push(`別名(= ${target?.names?.ja ?? row.aliasOf})`);
   }
   detailMeta.textContent = parts.join(' · ');
+  if (scrollToDetail) {
+    scrollToDetail = false;
+    detail.scrollIntoView({ block: 'start' });
+  }
 }
 
 /* ---------- render loop ---------- */
