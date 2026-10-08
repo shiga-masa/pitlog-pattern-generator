@@ -50,7 +50,9 @@ export function mountPreview(container, props) {
   const zoomIn = button('+');
   toolbar.append(viewBtns.single, viewBtns.tile, boundaryLabel, zoomOut, zoomValue, zoomIn);
 
-  const stage = el('div', 'width:100%;max-width:100%;overflow:auto;border:1px solid var(--earth);background:var(--white);box-sizing:border-box;min-height:44px;');
+  // No border on the stage and no outline on the SVG: the pattern's own frame (part of the preset)
+  // is the only rule drawn around it (CONTRACT 4.3).
+  const stage = el('div', 'width:100%;max-width:100%;overflow:auto;background:var(--white);box-sizing:border-box;min-height:44px;');
   const scaleWrap = el('div', 'display:flex;flex-direction:column;gap:4px;align-items:flex-start;');
   const scaleBar = el('div', 'height:0;border-top:2px solid var(--earth);');
   const scaleText = el('span', 'font-size:14px;color:var(--earth);', '10 mm');
@@ -107,7 +109,8 @@ export function mountPreview(container, props) {
 
   function keyOf(state) {
     if (!state || state.presetId === null) return 'none';
-    return JSON.stringify([state.presetId, ui.view, ui.boundary, buildRenderOptions(state)]);
+    // the boundary toggle only draws in the tile view (the single view has no outline)
+    return JSON.stringify([state.presetId, ui.view, ui.view === 'tile' && ui.boundary, buildRenderOptions(state)]);
   }
 
   async function draw() {
@@ -141,8 +144,7 @@ export function mountPreview(container, props) {
 
   async function buildSingle(id, options) {
     const { svg, meta } = await renderSVG(id, options);
-    const svgText = ui.boundary ? addOutline(svg) : svg;
-    return { svg: svgText, warnings: meta.warnings ?? [], label: '1 枚' };
+    return { svg, warnings: meta.warnings ?? [], label: '1 枚' };
   }
 
   async function buildTile(id, options) {
@@ -165,11 +167,6 @@ export function mountPreview(container, props) {
       + rules
       + `</svg>`;
     return { svg, warnings: pat.warnings ?? [], label: `タイル ${round(tw)} × ${round(th)} pt` };
-  }
-
-  /** Outline the region with --earth (inside the SVG root, so it follows the zoom). */
-  function addOutline(svgText) {
-    return svgText.replace('<svg ', '<svg style="outline:1px solid var(--earth);outline-offset:-1px;" ');
   }
 
   function update(state) {

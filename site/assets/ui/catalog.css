@@ -31,14 +31,33 @@
   font-weight: 700;
 }
 
+/* The tile grid is its own vertical scroll area: the search box and the count/bulk bar stay
+   above it, and its height leaves --cat-peek of the next section (the hint, or the detail
+   area) visible at the bottom of the first screen. --cat-head is the largest distance from
+   the top of the page to the top of the grid at that width (header + search + count/bulk bar,
+   measured: 232 px on desktop, 226-276 px on phones where the bulk button may wrap). dvh
+   follows the mobile browser's address bar; vh is the fallback. The 4 px padding keeps the
+   2 px :focus-visible outline (offset 2 px) of edge tiles inside the scroll area, and
+   scroll-padding keeps a focused tile fully in view when Tab scrolls it. The scrollbar is
+   drawn in the two site colours only. */
 .cat-grid {
+  --cat-head: 240px;
+  --cat-peek: 72px;
   list-style: none;
   margin: 0;
-  padding: 0;
+  padding: 4px 4px 8px;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 20px 16px;
   min-width: 0;
+  max-height: max(200px, calc(100vh - var(--cat-head) - var(--cat-peek)));
+  max-height: max(200px, calc(100dvh - var(--cat-head) - var(--cat-peek)));
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: auto;
+  scroll-padding: 8px 0;
+  scrollbar-color: var(--earth) var(--white);
+  border-bottom: 1px solid var(--earth);
 }
 
 .cat-cell {
@@ -143,6 +162,7 @@
 
 @media (max-width: 479px) {
   .cat-grid {
+    --cat-head: 280px;
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   /* style.css makes buttons full width on phones; tiles already fill their cell */
