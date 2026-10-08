@@ -1,16 +1,13 @@
 // YOMI coverage: every preset that draws a pattern (resolved layers not all 'empty') has a hiragana
 // reading, except the ids in KNOWN_MISSING, each with the reason. Counts are printed at the end.
+// A value is a string or a non-empty array of distinct readings (first = primary, used for sorting).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { listPresets } from '../../src/index.js';
 import { YOMI } from '../../src/presets/yomi.js';
 
 /** Ids deliberately left without a reading (the reading could not be established). */
-const KNOWN_MISSING = {
-  'zc:111121002': '大礫岩: たいれきがん / だいれきがん の別があり資料で確定できない',
-  'zc:599200002': '埋土: うめど / うめつち / まいど の別があり資料で確定できない',
-  'zc:t5-2:1': '埋土: うめど / うめつち / まいど の別があり資料で確定できない',
-};
+const KNOWN_MISSING = {};
 
 // hiragana, long-vowel mark, middle dot, brackets, digits and ASCII/full-width symbols only
 const ALLOWED = /^[ぁ-ゖー・（）()「」［］[\]0-9０-９\-－～~、,./／ ]+$/u;
@@ -39,9 +36,30 @@ test('YOMI has no stray ids (only targets)', () => {
   assert.deepEqual(stray, [], `YOMI ids that are not pattern presets: ${stray.join(', ')}`);
 });
 
-test('every reading is hiragana', () => {
-  const bad = Object.entries(YOMI).filter(([, y]) => typeof y !== 'string' || !ALLOWED.test(y) || !HAS_KANA.test(y));
+const isReading = (y) => typeof y === 'string' && ALLOWED.test(y) && HAS_KANA.test(y);
+
+test('every reading is hiragana (a string, or every element of an array)', () => {
+  const bad = Object.entries(YOMI).filter(([, y]) => (Array.isArray(y) ? y.length === 0 || !y.every(isReading) : !isReading(y)));
   assert.deepEqual(bad, [], `readings with forbidden characters: ${bad.map(([id, y]) => `${id}=${y}`).join(', ')}`);
+});
+
+test('an array of readings has no duplicates', () => {
+  const dup = Object.entries(YOMI).filter(([, y]) => Array.isArray(y) && new Set(y).size !== y.length);
+  assert.deepEqual(dup, [], `duplicate readings: ${dup.map(([id, y]) => `${id}=${y}`).join(', ')}`);
+});
+
+test('required alternative readings are present with the primary reading first', () => {
+  const expect = {
+    'zc:111121002': ['だいれきがん', 'たいれきがん'],
+    'zc:599200002': ['うめど', 'うめつち', 'まいど'],
+    'zc:t5-2:1': ['うめど', 'うめつち', 'まいど'],
+    'zc:599200001': ['もりど', 'もりつち'],
+    'zc:533102000': ['こくでい', 'くろどろ', 'くろでい'],
+    'zc:540120000': ['かざんばい', 'かざんかい'],
+    'zc:531211200': ['ちゅうさ', 'なかずな', 'ちゅうずな'],
+    'zc:531111300': ['さいれき', 'ほそれき'],
+  };
+  for (const [id, ys] of Object.entries(expect)) assert.deepEqual(YOMI[id], ys, id);
 });
 
 test('presets with the same name share the same reading', () => {
@@ -49,7 +67,7 @@ test('presets with the same name share the same reading', () => {
   for (const p of targets) {
     if (!(p.id in YOMI)) continue;
     const prev = byName.get(p.names.ja);
-    if (prev !== undefined) assert.equal(YOMI[p.id], prev, `${p.id} ${p.names.ja}`);
+    if (prev !== undefined) assert.deepEqual(YOMI[p.id], prev, `${p.id} ${p.names.ja}`);
     else byName.set(p.names.ja, YOMI[p.id]);
   }
 });

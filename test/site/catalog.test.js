@@ -6,6 +6,8 @@ import {
   partitionRows,
   sortByYomi,
   filterCatalog,
+  readingsOf,
+  primaryReading,
   buildCatalog,
 } from '../../site/app/ui/catalog.js';
 import { listPresets } from '../../src/index.js';
@@ -75,6 +77,50 @@ test('filterCatalog matches name, reading (either kana), symbol, code and id; to
   assert.deepEqual(ids('存在しない'), []);
 });
 
+const MULTI_ROWS = [
+  { id: 'm:1', names: { ja: '大礫岩' }, archetypes: ['grid'] },
+  { id: 'm:2', names: { ja: '埋土' }, archetypes: ['grid'] },
+  { id: 'm:3', names: { ja: '礫岩' }, archetypes: ['grid'] },
+];
+const MY = { 'm:1': ['だいれきがん', 'たいれきがん'], 'm:2': ['うめど', 'うめつち', 'まいど'], 'm:3': 'れきがん' };
+
+test('readingsOf / primaryReading accept a string or an array', () => {
+  assert.deepEqual(readingsOf(MY, 'm:1'), ['だいれきがん', 'たいれきがん']);
+  assert.deepEqual(readingsOf(MY, 'm:3'), ['れきがん']);
+  assert.deepEqual(readingsOf(MY, 'none'), []);
+  assert.equal(primaryReading(MY, 'm:2'), 'うめど');
+  assert.equal(primaryReading(MY, 'm:3'), 'れきがん');
+  assert.equal(primaryReading(MY, 'none'), null);
+  assert.equal(primaryReading({ x: [] }, 'x'), null);
+});
+
+test('sortByYomi sorts by the first reading of an array', () => {
+  // だいれきがん (primary) < れきがん; たいれきがん / まいど must not be used as the key
+  const { sorted, missing } = sortByYomi(MULTI_ROWS, MY);
+  assert.deepEqual(sorted.map((r) => r.id), ['m:2', 'm:1', 'm:3']);
+  assert.deepEqual(missing, []);
+});
+
+test('filterCatalog matches every reading of an array, in either kana', () => {
+  const ids = (q) => filterCatalog(MULTI_ROWS, q, MY).map((r) => r.id);
+  assert.deepEqual(ids('だいれき'), ['m:1']);
+  assert.deepEqual(ids('たいれき'), ['m:1']);
+  assert.deepEqual(ids('タイレキ'), ['m:1']);
+  assert.deepEqual(ids('うめつち'), ['m:2']);
+  assert.deepEqual(ids('マイド'), ['m:2']);
+  assert.deepEqual(ids('れきがん'), ['m:1', 'm:3']);
+});
+
+test('filterCatalog on the real YOMI finds alternative readings', () => {
+  const rows = buildCatalog(listPresets(), YOMI).rows;
+  const ids = (q) => filterCatalog(rows, q, YOMI).map((r) => r.id);
+  assert.ok(ids('たいれきがん').includes('zc:111121002'));
+  assert.ok(ids('まいど').includes('zc:599200002'));
+  assert.ok(ids('うめつち').includes('zc:t5-2:1'));
+  assert.ok(ids('くろどろ').includes('zc:533102000'));
+  assert.ok(ids('カザンカイ').includes('zc:540120000'));
+});
+
 test('buildCatalog on the real registry: no blank pattern shown, counts add up, order follows YOMI', () => {
   const all = listPresets();
   const byId = new Map(all.map((r) => [r.id, r]));
@@ -86,8 +132,9 @@ test('buildCatalog on the real registry: no blank pattern shown, counts add up, 
     if (r.aliasOf) assert.equal(isBlankRow(byId.get(r.aliasOf)), false, r.id);
   }
   const withY = model.rows.filter((r) => !model.missingYomi.includes(r.id));
+  const k = (id) => foldText(primaryReading(YOMI, id));
   for (let i = 1; i < withY.length; i += 1) {
-    assert.ok(foldText(YOMI[withY[i - 1].id]) <= foldText(YOMI[withY[i].id]), `${withY[i - 1].id} before ${withY[i].id}`);
+    assert.ok(k(withY[i - 1].id) <= k(withY[i].id), `${withY[i - 1].id} before ${withY[i].id}`);
   }
   // rows without a reading are all at the end
   const tail = model.rows.slice(model.rows.length - model.missingYomi.length).map((r) => r.id);

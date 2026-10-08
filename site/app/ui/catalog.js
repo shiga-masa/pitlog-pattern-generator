@@ -1,13 +1,14 @@
 /**
  * Pattern catalogue (site/app/ui). Contract: site/app/ui/CONTRACT.md §4.1.
  *
- * One flat grid of tiles, one tile per preset that draws something, ordered by the reading
- * (hiragana) of its name from src/presets/yomi.js. No table tabs and no table headings.
+ * One flat grid of tiles, one tile per preset that draws something, ordered by the primary reading
+ * (hiragana) of its name from src/presets/yomi.js (a reading is a string, or an array whose first
+ * element is the primary one). No table tabs and no table headings.
  *   - Excluded: presets whose archetypes are all 'empty' (the drawing is blank) and aliases that
  *     point at such a preset. An alias that draws a pattern is shown under its own name.
  *   - A preset without a reading is not dropped: it is warned about on the console and placed
  *     at the end (ordered by id).
- *   - The search box narrows the tiles by name, reading, symbol, code and id; katakana and
+ *   - The search box narrows the tiles by name, every reading, symbol, code and id; katakana and
  *     hiragana match each other.
  *   - Each tile has a small preview drawn lazily (IntersectionObserver) with the default
  *     ink #000000 / paper #ffffff, and the name.
@@ -60,17 +61,41 @@ export function partitionRows(rows) {
 }
 
 /**
- * Order rows by reading. Readings are compared as hiragana strings (code-point order,
+ * All readings of a preset: [] when it has none, else the non-empty strings, primary first.
+ * @param {Record<string, string|string[]>} yomi
+ * @param {string} id
+ * @returns {string[]}
+ */
+export function readingsOf(yomi, id) {
+  if (!Object.prototype.hasOwnProperty.call(yomi, id)) return [];
+  const y = yomi[id];
+  const list = Array.isArray(y) ? y : [y];
+  return list.filter((s) => typeof s === 'string' && s !== '');
+}
+
+/**
+ * Primary reading (sort key) of a preset, or null when it has none.
+ * @param {Record<string, string|string[]>} yomi
+ * @param {string} id
+ * @returns {string|null}
+ */
+export function primaryReading(yomi, id) {
+  const list = readingsOf(yomi, id);
+  return list.length > 0 ? list[0] : null;
+}
+
+/**
+ * Order rows by primary reading. Readings are compared as hiragana strings (code-point order,
  * katakana folded to hiragana); equal readings fall back to the id. Rows without a reading
  * go to the end, ordered by id, and are returned in `missing`.
  * @param {Array<object>} rows
- * @param {Record<string, string>} yomi presetId -> reading
+ * @param {Record<string, string|string[]>} yomi presetId -> reading, or readings (primary first)
  * @returns {{sorted: object[], missing: string[]}}
  */
 export function sortByYomi(rows, yomi) {
   const key = (r) => {
-    const y = Object.prototype.hasOwnProperty.call(yomi, r.id) ? yomi[r.id] : undefined;
-    return typeof y === 'string' && y !== '' ? foldText(y) : null;
+    const y = primaryReading(yomi, r.id);
+    return y === null ? null : foldText(y);
   };
   const withY = [];
   const without = [];
@@ -85,10 +110,9 @@ export function sortByYomi(rows, yomi) {
   return { sorted: [...withY.map((x) => x.r), ...without], missing: without.map((r) => r.id) };
 }
 
-/** Text searched for one row: names, reading, symbol, code and id. */
+/** Text searched for one row: names, every reading, symbol, code and id. */
 export function searchTextOf(row, yomi = {}) {
-  const y = Object.prototype.hasOwnProperty.call(yomi, row.id) ? yomi[row.id] : '';
-  return [row.names?.ja, row.names?.en, y, row.symbol, row.code, row.id].filter(Boolean).join(' ');
+  return [row.names?.ja, row.names?.en, ...readingsOf(yomi, row.id), row.symbol, row.code, row.id].filter(Boolean).join(' ');
 }
 
 /**
@@ -96,7 +120,7 @@ export function searchTextOf(row, yomi = {}) {
  * in the row's search text (AND). An empty query keeps every row. Order is kept.
  * @param {Array<object>} rows
  * @param {string} query
- * @param {Record<string, string>} [yomi]
+ * @param {Record<string, string|string[]>} [yomi]
  * @returns {Array<object>}
  */
 export function filterCatalog(rows, query, yomi = {}) {
@@ -111,7 +135,7 @@ export function filterCatalog(rows, query, yomi = {}) {
 /**
  * The full catalogue model: shown rows in reading order, plus counts.
  * @param {Array<object>} rows listPresets()
- * @param {Record<string, string>} yomi
+ * @param {Record<string, string|string[]>} yomi
  * @returns {{rows: object[], excluded: number, missingYomi: string[]}}
  */
 export function buildCatalog(rows, yomi) {

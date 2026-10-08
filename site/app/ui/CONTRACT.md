@@ -128,11 +128,12 @@ mountCatalog(container, {
 ```
 - `listPresets()` の全行を 1 つの平らなグリッドに並べる。表のタブ・見出し・区分は作らない。
 - 除外: `archetypes` がすべて `'empty'`(または空)の行と、参照先がそうである alias。模様を持つ alias はその名称で 1 枚のタイルとして出す。
-- 並び順: `src/presets/yomi.js` の `YOMI[id]`(ひらがな)をカタカナ→ひらがなに畳んだ文字列のコードポイント順。同じ読みは ID 順。読みの無い ID は捨てずに `console.warn` で列挙し、末尾に ID 順で置く。
-- 検索窓: 名称(ja/en)・読み・記号・コード・ID。NFKC・小文字化・カタカナ→ひらがなで畳み、空白区切りの全語を含むもの(AND)。件数は「表示 N 件」(N は絞り込み後)とだけ出す。
+- 読み: `src/presets/yomi.js` の `YOMI[id]` は `string | string[]`(ひらがな)。配列は先頭が正の読み(並び順に使う)、全要素が検索の一致対象。別読みは一般に併用されるものだけを入れる。
+- 並び順: `YOMI[id]` の先頭の読みをカタカナ→ひらがなに畳んだ文字列のコードポイント順。同じ読みは ID 順。読みの無い ID は捨てずに `console.warn` で列挙し、末尾に ID 順で置く。
+- 検索窓: 名称(ja/en)・読み(別読みを含む全要素)・記号・コード・ID。NFKC・小文字化・カタカナ→ひらがなで畳み、空白区切りの全語を含むもの(AND)。件数は「表示 N 件」(N は絞り込み後)とだけ出す。
 - タイル: 模様の小さなプレビュー(`renderSVG(id, {})` = 既定色 #000000 / #ffffff、枠付き、IntersectionObserver で遅延描画)と名称。描画失敗はタイル内に理由を出し、console.error にも出す。
 - `state.presetId` のタイルを選択状態(`aria-pressed="true"`)で表示。別名タイルから選んだときはそのタイルを選択状態にする。
-- 純粋関数(node:test 用、DOM 無し): `foldText`, `isBlankRow`, `partitionRows`, `sortByYomi`, `filterCatalog`, `searchTextOf`, `buildCatalog`。
+- 純粋関数(node:test 用、DOM 無し): `foldText`, `isBlankRow`, `partitionRows`, `readingsOf`, `primaryReading`, `sortByYomi`, `filterCatalog`, `searchTextOf`, `buildCatalog`。
 
 ### 4.2 paramPanel.js(app-2)
 
