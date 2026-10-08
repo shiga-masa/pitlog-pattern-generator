@@ -8,6 +8,11 @@
  * is along the normal n = dir(angle - 90). Every line is a translate of one curve by k * lineSpacing * n,
  * so the picture is invariant under wavelength * u and lineSpacing * n (period()).
  * amplitude is the HALF crest-to-trough height (PARAMS). The trapezoid's full rise is therefore 2 * amplitude.
+ * phaseStep (stage 3) adds k * phaseStep to the phase of line k, so line k+1 is line k translated by
+ * lineSpacing * n - phaseStep * wavelength * u (the lines of R2 §33-§39 are copies shifted horizontally).
+ * ends 'halfWave' (stage 3) keeps only whole half waves (zero crossing to zero crossing) inside the inset region
+ * (R2 §33/§39: the original lines stop at the last whole arc rather than at the frame edge).
+ * chords (stage 3) draws the sine as straight chords between samples at fixed phases (R3 4-1 V: 5 per half wave).
  * Stage 2: layer.offset shifts the reference point R; ctx.fit is honoured by drawing unfitted and
  * stretching (core/fit.js drawStretched); period() is scaled by the fit and is null when the lines do
  * not repeat (a margin, or a finite `lines` count), as for hatch.
@@ -18,7 +23,7 @@ import { EPS } from '../core/defaults.js';
 import { dir } from '../core/geom.js';
 import { polyline } from '../core/primitives.js';
 import { clipPolyline } from '../core/clip.js';
-import { angle, autoCount, enumOf, len, margin, obj, ratio, size } from '../core/schema.js';
+import { angle, autoCount, count, enumOf, fixed, len, margin, obj, ratio, size } from '../core/schema.js';
 import { drawStretched, fitPeriod, offsetOf } from '../core/fit.js';
 
 const OWNER = 'arch-3';
@@ -43,7 +48,11 @@ export const PARAMS = obj({
   rampDy: size('trapezoid: ramp vertical rise (pt)'),
   doubleGap: { type: 'number', unit: 'pt', density: 'motif', min: 0, default: 0, desc: 'distance of the second parallel line; 0 = single line (R2 §33: 0.93)' },
   phase: ratio('phase as a fraction of the wavelength', { min: 0, max: 1, default: 0 }),
+  phaseStep: ratio('phase added per line: line k (k = normal offset from R / lineSpacing) is drawn with phase + k * phaseStep; 0 = all lines in phase', { min: 0, max: 1, default: 0 }),
+  chords: count('sine only: straight chords per half wavelength between samples at phase multiples of 1/(2 chords), anchored at the zero crossings; 0 = smooth curve', { default: 0 }),
   margin: margin('distance kept from the region edges (pt)', { default: 0 }),
+  ends: enumOf(['clip', 'halfWave'], "line ends: 'clip' cuts the curve at the inset edge; 'halfWave' keeps only whole half waves (zero crossing to zero crossing) that lie inside the inset", { default: 'clip' }),
+  endSlack: fixed("ends 'halfWave': a half wave may overrun the inset by this much and is then clipped (pt)", { min: 0, default: 0 }),
 }, 'wave parameters (design §2.2)');
 
 /** Samples per wavelength for the sine (chord error ~ A * (2 pi / 96)^2 / 8 < 0.001 pt for A = 1 pt). */
@@ -104,12 +113,15 @@ function renderUnfitted(layer, ctx) {
   const primitives = [];
   let placed = 0;
   let skipped = 0;
-  for (const q of offsets) {
+  for (const { q, k } of offsets) {
     const curves = d > 0 ? [q, q + d] : [q];
+    const lineGeom = p.phaseStep === 0 ? g : { ...g, phase: g.phase + k * p.phaseStep };
     let pieces = 0;
     for (const qc of curves) {
-      const pts = curvePoints(g, R, u, n, qc, tMin, tMax);
-      for (const piece of clipPolyline(pts, inset)) {
+      const runs = p.ends === 'halfWave'
+        ? wholeHalfWaveRuns(lineGeom, R, u, n, qc, tMin, tMax, inset, p.endSlack)
+        : [curvePoints(lineGeom, R, u, n, qc, tMin, tMax)];
+      for (const piece of runs.flatMap((pts) => clipPolyline(pts, inset))) {
         if (piece.length < 2) continue;
         primitives.push(polyline(piece, STYLE));
         pieces++;
@@ -119,7 +131,7 @@ function renderUnfitted(layer, ctx) {
     else skipped++;
   }
 
-  const warn = lineSpacingWarning(layer.id, g, s, d, ctx.strokeWidth);
+  const warn = lineSpacingWarning(layer.id, g, s, d, ctx.strokeWidth, p.phaseStep);
   if (warn) warnings.push(warn);
 
   return { primitives, placed, skipped, warnings };
@@ -149,13 +161,15 @@ function unfittedPeriod(layer) {
   const L = p.wavelength;
   const s = p.lineSpacing;
   const tol = 1e-9 * Math.max(L, s);
+  // Lattice of the picture: a * (L u) + b * (s n - phaseStep L u) (line k+1 = line k moved by the second vector).
+  const sh = -p.phaseStep * L;
   let w = null;
   let h = null;
   for (let a = -PERIOD_SEARCH_LIMIT; a <= PERIOD_SEARCH_LIMIT; a++) {
     for (let b = -PERIOD_SEARCH_LIMIT; b <= PERIOD_SEARCH_LIMIT; b++) {
       if (a === 0 && b === 0) continue;
-      const vx = a * L * u.x + b * s * n.x;
-      const vy = a * L * u.y + b * s * n.y;
+      const vx = (a * L + b * sh) * u.x + b * s * n.x;
+      const vy = (a * L + b * sh) * u.y + b * s * n.y;
       if (Math.abs(vy) <= tol && Math.abs(vx) > tol && (w === null || Math.abs(vx) < w)) w = Math.abs(vx);
       if (Math.abs(vx) <= tol && Math.abs(vy) > tol && (h === null || Math.abs(vy) < h)) h = Math.abs(vy);
     }
@@ -175,8 +189,12 @@ function waveGeometry(p, id) {
   const lambda = p.wavelength;
   const A = p.amplitude;
   if (p.waveform === 'sine') {
-    return { kind: 'sine', lambda, A, phase: p.phase, maxSlope: (2 * Math.PI * A) / lambda };
+    const c = p.chords;
+    // A chord between samples 1/(2c) of the wavelength apart is steepest across a zero crossing.
+    const maxSlope = c > 0 ? (A * Math.sin(Math.PI / (2 * c))) / (lambda / (2 * c)) : (2 * Math.PI * A) / lambda;
+    return { kind: 'sine', lambda, A, phase: p.phase, chords: c, maxSlope };
   }
+  if (p.chords > 0) throw new GeometryError(`wave ${id}: chords ${p.chords} applies to waveform 'sine' only (got '${p.waveform}'); use 0 for the trapezoid`);
   if (p.rampDx === undefined) throw new GeometryError(`wave ${id}: waveform trapezoid needs rampDx`);
   const rampDx = p.rampDx;
   const flat = lambda / 2 - rampDx;
@@ -213,9 +231,9 @@ function anchorPoint(origin, region) {
 }
 
 /**
- * Normal offsets q of the base lines (pt, measured from R along n).
+ * Base lines: normal offset q (pt, measured from R along n) and line index k = q / s (phaseStep multiplier).
  * auto: lattice R + k * s * n covering the region (including the amplitude and the second line).
- * explicit N: N lines, symmetric about R when origin is 'center', otherwise starting at R.
+ * explicit N: N lines, symmetric about R when origin is 'center' (half-integer k for even N), otherwise starting at R.
  */
 function lineOffsets(p, origin, qMin, qMax, s, d) {
   if (p.lines === 'auto') {
@@ -223,12 +241,15 @@ function lineOffsets(p, origin, qMin, qMax, s, d) {
     const kMin = Math.ceil((qMin - A - d) / s);
     const kMax = Math.floor((qMax + A) / s);
     const out = [];
-    for (let k = kMin; k <= kMax; k++) out.push(k * s);
+    for (let k = kMin; k <= kMax; k++) out.push({ q: k * s, k });
     return out;
   }
   const N = p.lines;
   const out = [];
-  for (let k = 0; k < N; k++) out.push(origin === 'center' ? (k - (N - 1) / 2) * s : k * s);
+  for (let i = 0; i < N; i++) {
+    const k = origin === 'center' ? i - (N - 1) / 2 : i;
+    out.push({ q: k * s, k });
+  }
   return out;
 }
 
@@ -238,6 +259,18 @@ function lineOffsets(p, origin, qMin, qMax, s, d) {
  */
 function curvePoints(g, R, u, n, q, tMin, tMax) {
   const at = (t, off) => [R.x + t * u.x + (q + off) * n.x, R.y + t * u.y + (q + off) * n.y];
+  if (g.kind === 'sine' && g.chords > 0) {
+    // Vertices at the phases j / (2 chords): t = (j / (2 chords) - phase) * lambda.
+    const m = 2 * g.chords;
+    const jMin = Math.floor((tMin / g.lambda + g.phase) * m) - 1;
+    const jMax = Math.ceil((tMax / g.lambda + g.phase) * m) + 1;
+    const pts = [];
+    for (let j = jMin; j <= jMax; j++) {
+      const tau = j / m;
+      pts.push(at((tau - g.phase) * g.lambda, g.A * Math.sin(2 * Math.PI * tau)));
+    }
+    return pts;
+  }
   if (g.kind === 'sine') {
     const N = Math.max(2, Math.ceil(((tMax - tMin) / g.lambda) * SINE_SAMPLES_PER_WAVELENGTH));
     const pts = [];
@@ -264,15 +297,72 @@ function curvePoints(g, R, u, n, q, tMin, tMax) {
   return pts;
 }
 
+/** Phase (fraction of the wavelength) of the first zero crossing: sine 0; trapezoid mid-ramp f + r/2 (mod 1/2). */
+function zeroCrossingPhase(g) {
+  if (g.kind === 'sine') return 0;
+  const half = (g.flat + g.rampDx / 2) / g.lambda;
+  return half - Math.floor(half * 2) / 2;
+}
+
+/** Part of a polyline (a graph over t) with t in [ta, tb]; boundary points interpolated. */
+function trimToT(pts, R, u, ta, tb) {
+  const tOf = ([x, y]) => (x - R.x) * u.x + (y - R.y) * u.y;
+  const lerp = (a, b, w) => [a[0] + (b[0] - a[0]) * w, a[1] + (b[1] - a[1]) * w];
+  const out = [];
+  for (let i = 0; i < pts.length; i++) {
+    const t = tOf(pts[i]);
+    if (i > 0) {
+      const t0 = tOf(pts[i - 1]);
+      for (const tc of [ta, tb]) {
+        if ((t0 < tc && t > tc) || (t0 > tc && t < tc)) out.push(lerp(pts[i - 1], pts[i], (tc - t0) / (t - t0)));
+      }
+    }
+    if (t >= ta - EPS && t <= tb + EPS) out.push(pts[i]);
+  }
+  return out;
+}
+
+/**
+ * ends 'halfWave': the curve cut into half waves at its zero crossings; a half wave is kept when all of its
+ * vertices lie inside the inset grown by `slack`. Consecutive kept half waves are joined into one run.
+ */
+function wholeHalfWaveRuns(g, R, u, n, q, tMin, tMax, inset, slack) {
+  const lam = g.lambda;
+  const z0 = zeroCrossingPhase(g);
+  const jMin = Math.floor(((tMin / lam + g.phase) - z0) * 2) - 1;
+  const jMax = Math.ceil(((tMax / lam + g.phase) - z0) * 2) + 1;
+  const x0 = inset.x - slack - EPS;
+  const x1 = inset.x + inset.width + slack + EPS;
+  const y0 = inset.y - slack - EPS;
+  const y1 = inset.y + inset.height + slack + EPS;
+  const runs = [];
+  let cur = null;
+  for (let j = jMin; j <= jMax; j++) {
+    const ta = (z0 + j / 2 - g.phase) * lam;
+    const tb = ta + lam / 2;
+    const piece = trimToT(curvePoints(g, R, u, n, q, ta, tb), R, u, ta, tb);
+    const inside = piece.length >= 2 && piece.every(([x, y]) => x >= x0 && x <= x1 && y >= y0 && y <= y1);
+    if (!inside) { cur = null; continue; }
+    if (cur) cur.push(...piece.slice(1));
+    else { cur = [...piece]; runs.push(cur); }
+  }
+  return runs;
+}
+
 /**
  * Warn when two neighbouring curves come closer than the stroke width (they merge visually).
  * For a curve translated by a distance D along n, the smallest perpendicular distance is D / sqrt(1 + S^2),
- * with S = max |slope| of the curve.
+ * with S = max |slope| of the curve. With a phase step, neighbouring base lines differ in displacement by up to
+ * 2A sin(pi phaseStep) (sine) or min(2A, S * along-line shift) (trapezoid, chords), which is taken off D.
  */
-function lineSpacingWarning(id, g, s, d, strokeWidth) {
-  const shifts = [s];
+function lineSpacingWarning(id, g, s, d, strokeWidth, phaseStep = 0) {
+  const ps = Math.min(phaseStep, 1 - phaseStep);
+  const drift = ps === 0 ? 0 : g.kind === 'sine' && !g.chords
+    ? 2 * g.A * Math.sin(Math.PI * ps)
+    : Math.min(2 * g.A, g.maxSlope * ps * g.lambda);
+  const shifts = [s - drift];
   if (d > 0) shifts.push(d);
-  if (d > 0 && Math.abs(s - d) > EPS) shifts.push(Math.abs(s - d));
+  if (d > 0 && Math.abs(s - d) > EPS) shifts.push(Math.abs(s - d) - drift);
   const S = g.maxSlope;
   const dmin = Math.min(...shifts.map((D) => D / Math.sqrt(1 + S * S)));
   if (dmin < strokeWidth) {

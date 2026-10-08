@@ -115,3 +115,53 @@ test('jitter is reported as not applied', () => {
   assert.equal(r.warnings.length, 1);
   assert.match(r.warnings[0], /jitter is not applied/);
 });
+
+// ---- placement 'corners' (R3 廃棄物 t4_1_p057_h0_r01 / 盛土 t4_2_p057_h1_r00) ----------------
+// Frame-relative prim endpoints of the originals: W 56.436, H 28.624, gap 2.782.
+const R3 = { x: 0, y: 0, width: 56.436, height: 28.624 };
+const RG = 2.782;
+
+test('placement defaults to centered (count 2 output unchanged)', () => {
+  const a = fd.render(layerOf({ direction: '/', count: 2, gap: 2.78 }), ctxOf());
+  const b = fd.render(layerOf({ direction: '/', count: 2, gap: 2.78, placement: 'centered' }), ctxOf());
+  assert.deepEqual(a.primitives, b.primitives);
+});
+
+test("placement 'corners' with '/' reproduces R3 盛土: (0,H)-(W-g,0) and (g,H)-(W,0)", () => {
+  const r = fd.render(layerOf({ direction: '/', count: 2, gap: RG, placement: 'corners' }), ctxOf(R3));
+  assert.equal(r.placed, 2);
+  assert.equal(r.skipped, 0);
+  assert.ok(sameEnds(r.primitives[0], [0, 28.624], [53.654, 0], 1e-9));
+  assert.ok(sameEnds(r.primitives[1], [2.782, 28.624], [56.436, 0], 1e-9));
+});
+
+test("placement 'corners' with 'x' reproduces R3 廃棄物 (4 lines, each ends in one corner)", () => {
+  const r = fd.render(layerOf({ direction: 'x', count: 2, gap: RG, placement: 'corners' }), ctxOf(R3));
+  assert.equal(r.placed, 4);
+  const want = [
+    [[0, 28.624], [53.654, 0]], [[2.782, 28.624], [56.436, 0]],
+    [[0, 0], [53.654, 28.624]], [[2.782, 0], [56.436, 28.624]],
+  ];
+  want.forEach(([a, b], i) => assert.ok(sameEnds(r.primitives[i], a, b, 1e-9), `line ${i}`));
+});
+
+test("placement 'corners' keeps the horizontal gap and parallel lines; follows an offset region", () => {
+  const region = { x: 10, y: 5, width: 20, height: 10 };
+  const r = fd.render(layerOf({ direction: '\\', count: 2, gap: 2, placement: 'corners' }), ctxOf(region));
+  assert.ok(sameEnds(r.primitives[0], [10, 5], [28, 15]));
+  assert.ok(sameEnds(r.primitives[1], [12, 5], [30, 15]));
+  close(xAtY(r.primitives[1], 10) - xAtY(r.primitives[0], 10), 2, 1e-9, 'horizontal gap');
+});
+
+test("placement 'corners' with count 1 is the plain diagonal", () => {
+  const r = fd.render(layerOf({ direction: '/', count: 1, placement: 'corners' }), ctxOf());
+  assert.equal(r.placed, 1);
+  assert.ok(sameEnds(r.primitives[0], [0, H], [W, 0]));
+});
+
+test("placement 'corners' with gap >= width throws GeometryError", () => {
+  assert.throws(
+    () => fd.render(layerOf({ direction: '/', count: 2, gap: 30, placement: 'corners' }), ctxOf({ x: 0, y: 0, width: 20, height: 10 })),
+    (e) => e instanceof GeometryError && /gap < frame width/.test(e.message),
+  );
+});

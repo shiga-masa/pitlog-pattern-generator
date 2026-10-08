@@ -175,3 +175,103 @@ test('density 2 halves wavelength, lineSpacing and amplitude (motif density), st
   close(p.lineSpacing, 4, 1e-9);
   close(p.amplitude, 0.5, 1e-9);
 });
+
+// ---------------------------------------------------------------------------
+// stage 3: phaseStep, chords, ends 'halfWave'
+// ---------------------------------------------------------------------------
+
+/** Point of a polyline nearest to x (horizontal waves). */
+const atX = (pts, x) => pts.reduce((best, p) => (Math.abs(p[0] - x) < Math.abs(best[0] - x) ? p : best));
+const MID = FRAME.height / 2;
+const CX = FRAME.width / 2;
+
+test('phaseStep 0 is the default and leaves the output unchanged', () => {
+  const base = { wavelength: 8.5, amplitude: 1.0, lineSpacing: 9.7, angle: 44.6, doubleGap: 0.95, phase: 0.69 };
+  assert.deepEqual(wave.render(layerOf(base), ctxOf()).primitives, wave.render(layerOf({ ...base, phaseStep: 0 }), ctxOf()).primitives);
+});
+
+test('phaseStep adds k x phaseStep to the phase of line k (k = normal offset / lineSpacing)', () => {
+  const r = wave.render(layerOf({ wavelength: 10, amplitude: 1, lineSpacing: 8, angle: 0, phaseStep: 0.25 }), ctxOf());
+  const byLine = (q) => polylines(r).find((p) => Math.abs(atX(p.points, CX)[1] - (MID + q)) < 1.5);
+  close(atX(byLine(0).points, CX)[1], MID, 0.01, 'k = 0: phase 0, zero crossing at R');
+  close(atX(byLine(8).points, CX)[1], MID + 8 + 1, 0.01, 'k = 1: phase 0.25, +A along n (down)');
+  close(atX(byLine(-8).points, CX)[1], MID - 8 - 1, 0.01, 'k = -1: phase -0.25, -A');
+});
+
+test('phaseStep with an explicit centred line count uses half-integer k for an even count', () => {
+  const r = wave.render(layerOf({ wavelength: 10, amplitude: 1, lineSpacing: 8, angle: 0, lines: 2, phaseStep: 0.25 }), ctxOf());
+  const ys = polylines(r).map((p) => atX(p.points, CX)[1]).sort((a, b) => a - b);
+  // k = -0.5: sin(2 pi (-0.125)) = -0.7071; k = +0.5: +0.7071
+  close(ys[0], MID - 4 - Math.SQRT1_2, 0.01);
+  close(ys[1], MID + 4 + Math.SQRT1_2, 0.01);
+});
+
+test('period with phaseStep follows the sheared lattice (wavelength u, lineSpacing n - phaseStep wavelength u)', () => {
+  // vectors (10, 0) and (-5, 5): (0, 10) = 2 * (-5, 5) + (10, 0)
+  const p = wave.period(layerOf({ wavelength: 10, amplitude: 1, lineSpacing: 5, angle: 0, phaseStep: 0.5 }), ctxOf());
+  close(p.w, 10, 1e-9);
+  close(p.h, 10, 1e-9);
+});
+
+test('a phaseStep that brings neighbouring lines together is warned', () => {
+  // s = 2.2, A = 1, phaseStep 0.5: the neighbouring line is in antiphase, closest approach 2.2 - 2 = 0.2 pt
+  const r = wave.render(layerOf({ wavelength: 40, amplitude: 1, lineSpacing: 2.2, lines: 3, phaseStep: 0.5 }, 'step'), ctxOf());
+  assert.ok(r.warnings.some((w) => /layer step: wave lines come within/.test(w)));
+  const r0 = wave.render(layerOf({ wavelength: 40, amplitude: 1, lineSpacing: 2.2, lines: 3 }, 'step'), ctxOf());
+  assert.deepEqual(r0.warnings, [], 'the same spacing in phase does not warn');
+});
+
+test('chords draws the sine as straight chords between samples at phase multiples of 1/(2 chords)', () => {
+  const r = wave.render(layerOf({ wavelength: 10, amplitude: 1, lineSpacing: 8, lines: 1, chords: 5 }), ctxOf());
+  const pts = polylines(r)[0].points;
+  const inner = pts.slice(1, -1); // the clipped end points lie on the region edge
+  for (let i = 1; i < inner.length; i++) close(inner[i][0] - inner[i - 1][0], 1, 1e-9, 'vertex spacing wavelength / 10');
+  const offs = inner.map((p) => Math.abs(p[1] - MID));
+  close(Math.max(...offs), Math.sin((2 * Math.PI) / 5), 1e-9, 'top vertices at A sin(72 deg)');
+  assert.ok(offs.some((o) => Math.abs(o - Math.sin(Math.PI / 5)) < 1e-9), 'side vertices at A sin(36 deg)');
+  assert.ok(offs.some((o) => o < 1e-9), 'a vertex at every zero crossing');
+});
+
+test('chords on the trapezoid throws GeometryError naming the waveform', () => {
+  assert.throws(
+    () => wave.render(layerOf({ wavelength: 19.6, amplitude: 1.445, lineSpacing: 7.06, waveform: 'trapezoid', rampDx: 2.85, chords: 4 }), ctxOf()),
+    (e) => e instanceof GeometryError && /chords 4 applies to waveform 'sine' only/.test(e.message),
+  );
+});
+
+test("ends 'halfWave' keeps only whole half waves inside the inset; 'clip' runs to the inset edge", () => {
+  // zero crossing at x = 3.0: phase = (CX - 3.0) / 10 mod 1; inset x 2 .. 54.03
+  const params = { wavelength: 10, amplitude: 1, lineSpacing: 8, lines: 1, margin: 2, phase: ((CX - 3.0) / 10) % 1 };
+  const clipped = polylines(wave.render(layerOf(params), ctxOf()))[0].points;
+  close(clipped[0][0], 2, 1e-9);
+  close(clipped.at(-1)[0], FRAME.width - 2, 1e-9);
+  const r = wave.render(layerOf({ ...params, ends: 'halfWave' }), ctxOf());
+  assert.equal(polylines(r).length, 1, 'consecutive half waves form one polyline');
+  const pts = polylines(r)[0].points;
+  close(pts[0][0], 3.0, 1e-9, 'starts at the first zero crossing inside');
+  close(pts.at(-1)[0], 53.0, 1e-9, 'ends at the last zero crossing inside (3 + 10 half waves)');
+  close(pts[0][1], MID, 1e-9);
+  close(pts.at(-1)[1], MID, 1e-9);
+});
+
+test('endSlack lets a half wave overrun the inset by that much; the overrun is clipped', () => {
+  // zero crossing at x = 2.1, inset starts at x = 2.2: the first half wave overruns by 0.1 pt
+  const params = { wavelength: 10, amplitude: 1, lineSpacing: 8, lines: 1, margin: 2.2, phase: ((CX - 2.1) / 10) % 1, ends: 'halfWave' };
+  close(polylines(wave.render(layerOf(params), ctxOf()))[0].points[0][0], 7.1, 1e-9, 'slack 0 drops the overrunning half wave');
+  close(polylines(wave.render(layerOf({ ...params, endSlack: 0.2 }), ctxOf()))[0].points[0][0], 2.2, 1e-9, 'slack 0.2 keeps it, clipped at the inset');
+});
+
+test("ends 'halfWave' on the trapezoid cuts at the mid-ramp zero crossings", () => {
+  const r = wave.render(layerOf({ wavelength: 19.6, amplitude: 1.445, lineSpacing: 7.06, waveform: 'trapezoid', rampDx: 2.85, lines: 1, ends: 'halfWave' }), ctxOf());
+  for (const p of polylines(r)) {
+    close(p.points[0][1], MID, 1e-9, 'run starts on the centre line');
+    close(p.points.at(-1)[1], MID, 1e-9, 'run ends on the centre line');
+  }
+});
+
+test('doubleGap with ends halfWave: both curves of a pair are cut to whole half waves', () => {
+  const r = wave.render(layerOf({ wavelength: 8.5, amplitude: 1.0, lineSpacing: 9.7, angle: 44.6, doubleGap: 0.95, lines: 3, phaseStep: 0.85, ends: 'halfWave', endSlack: 0.5 }), ctxOf());
+  assert.equal(r.placed, 3);
+  assert.equal(r.skipped, 0);
+  assert.ok(polylines(r).length >= 6);
+});

@@ -17,14 +17,26 @@
  *     wider than the 6.92 pt band, so a centred motif crosses the frame edge by < 0.3 pt).
  *     layer.offset.y shifts the rows; a non-zero offset.x is rejected (the bands sit at the sides).
  *     ctx.fit scales pitchY by fit.y; period() is scaled by the fit.
+ *   - Stage 3 (verification against the R2 prim data, all five rows of table 3-9):
+ *     * bandFrame.stroke 'inner' draws only the inner edge of each band (x = bandWidth, x = W - bandWidth)
+ *       as one vertical line. The original draws no band rectangle: its outer edges are the frame line
+ *       and the inner edge is a single line (R2 prim t3_9_p030_h2_r00..r04: one 'l' item per band).
+ *       The band ground (fill) is unchanged. Default 'ink' (closed outline) is kept.
+ *     * rowY lists the row centres explicitly (pt from the region top, before layer.offset.y), for the
+ *       hand-placed rows of the original (row gaps 3.38-4.60 pt, not equal). One list for both bands,
+ *       or {left, right} per band. It replaces rows / origin; pitchY is still required (density, period).
+ *       rowY is not density-scaled; a layer densityScale other than 1 warns. period() is null with rowY.
+ *     * motifX moves the motif horizontally from the band centre (pt, same for both bands, default 0),
+ *       so that several sides-restricted layers can place separate pieces of a band motif
+ *       (layer.offset.x stays rejected: it would move the bands).
  */
 
 import { GeometryError } from '../core/errors.js';
 import { EPS } from '../core/defaults.js';
 import { keepInstance } from '../core/clip.js';
 import { overlapWarning } from '../core/density.js';
-import { polygon, transformPrimitive } from '../core/primitives.js';
-import { autoCount, enumOf, fixed, len, obj } from '../core/schema.js';
+import { line, polygon, transformPrimitive } from '../core/primitives.js';
+import { arr, autoCount, enumOf, fixed, len, obj, union } from '../core/schema.js';
 import { fitOf, fitPeriod, offsetOf } from '../core/fit.js';
 
 export const ARCHETYPE = 'edgeBand';
@@ -42,9 +54,17 @@ export const PARAMS = obj({
   rows: autoCount('motifs per band; auto = floor(height / pitchY)', { default: 'auto' }),
   edgeMode: enumOf(['auto', 'whole', 'clip'], 'auto = whole when the motif fits the band width, clip otherwise; whole = only motifs inside the region; clip = motifs touching the region, clipped', { default: 'auto' }),
   bandFrame: obj({
-    stroke: enumOf(['ink', 'none'], 'band outline (stroke is the spec stroke width; per-element widths do not exist)', { default: 'ink' }),
+    stroke: enumOf(['ink', 'inner', 'none'], "band outline: 'ink' = closed outline, 'inner' = the inner edge line only (the outer edges are left to the frame), 'none'; stroke is the spec stroke width", { default: 'ink' }),
     fill: enumOf(['paper', 'none'], 'band ground', { default: 'paper' }),
   }, 'band outline and ground', { default: {} }),
+  motifX: fixed('horizontal shift of the motif from the band centre (pt, right positive; both bands)', { default: 0 }),
+  rowY: union([
+    arr(fixed('row centre (pt from the region top)'), 'row centres for both bands', { minItems: 1 }),
+    obj({
+      left: arr(fixed('row centre (pt from the region top)'), 'row centres of the left band', { minItems: 1, required: true }),
+      right: arr(fixed('row centre (pt from the region top)'), 'row centres of the right band', { minItems: 1, required: true }),
+    }, 'row centres per band'),
+  ], 'explicit row centres (pt from the region top; layer.offset.y is added); replaces rows and origin; not density-scaled. Omitted = regular rows from pitchY'),
 }, 'edge band parameters (design §2.2); motif is not density-scaled');
 
 /**
@@ -74,8 +94,16 @@ export function render(layer, ctx) {
 
   // Row positions (vertical).
   const pitch = p.pitchY * fitOf(ctx).y;
+  const explicit = p.rowY !== undefined && p.rowY !== null;
+  if (explicit && p.rows !== 'auto') throw new GeometryError(`layer ${id}: rows (${p.rows}) and rowY cannot both be given; rowY sets the rows`);
+  if (explicit && layer.densityScale !== undefined && Math.abs(layer.densityScale - 1) > EPS) {
+    warnings.push(`layer ${id}: rowY is not density-scaled (densityScale ${layer.densityScale}); the rows stay at the listed positions`);
+  }
+  const rowYOf = (s) => (Array.isArray(p.rowY) ? p.rowY : p.rowY[s]);
   let rows;
-  if (p.rows === 'auto') {
+  if (explicit) {
+    rows = null;
+  } else if (p.rows === 'auto') {
     rows = Math.floor(H / pitch + 1e-9);
     if (rows < 1) throw new GeometryError(`layer ${id}: pitchY ${pitch} is larger than region height ${H}; no row fits`);
   } else {
@@ -83,7 +111,8 @@ export function render(layer, ctx) {
   }
   let yAt;
   const o = ctx.origin;
-  if (o === 'center') yAt = (k) => H / 2 + (k - (rows - 1) / 2) * pitch + off.y;
+  if (explicit) yAt = null;
+  else if (o === 'center') yAt = (k) => H / 2 + (k - (rows - 1) / 2) * pitch + off.y;
   else if (o === 'topLeft') yAt = (k) => pitch / 2 + k * pitch + off.y;
   else if (o && typeof o === 'object') {
     if (o.x !== 0) warnings.push(`layer ${id}: origin.x (${o.x}) is ignored for edgeBand; bands sit at the region sides`);
@@ -97,10 +126,17 @@ export function render(layer, ctx) {
 
   // Band ground and outline first (drawn under the motifs).
   const fs = p.bandFrame;
-  if (fs.fill !== 'none' || fs.stroke !== 'none') {
+  const outline = fs.stroke === 'ink' ? 'ink' : 'none';
+  if (fs.fill !== 'none' || outline !== 'none') {
     for (const s of sides) {
       const [x0, x1] = bandX[s];
-      out.push(polygon([[x0, 0], [x1, 0], [x1, H], [x0, H]], { stroke: fs.stroke, fill: fs.fill }));
+      out.push(polygon([[x0, 0], [x1, 0], [x1, H], [x0, H]], { stroke: outline, fill: fs.fill }));
+    }
+  }
+  if (fs.stroke === 'inner') {
+    for (const s of sides) {
+      const xi = s === 'left' ? bandX.left[1] : bandX.right[0];
+      out.push(line(xi, 0, xi, H, { stroke: 'ink', fill: 'none' }));
     }
   }
 
@@ -112,10 +148,11 @@ export function render(layer, ctx) {
   if (ov) warnings.push(ov);
 
   for (const s of sides) {
-    const cx = (bandX[s][0] + bandX[s][1]) / 2;
+    const cx = (bandX[s][0] + bandX[s][1]) / 2 + p.motifX;
     const col = s === 'left' ? 0 : 1;
-    for (let k = 0; k < rows; k++) {
-      const y = yAt(k);
+    const ys = explicit ? rowYOf(s).map((v) => v + off.y) : Array.from({ length: rows }, (_, k) => yAt(k));
+    for (let k = 0; k < ys.length; k++) {
+      const y = ys[k];
       const prims = prims0.map((q) => transformPrimitive(q, { x: cx, y }));
       if (keepInstance(prims, R, mode)) {
         for (const q of prims) out.push(q);
@@ -134,12 +171,14 @@ export function render(layer, ctx) {
  * Smallest seamless period for tileMode 'period' (design §5.5), or null when none exists.
  * The band ground repeats every region width W (left and right bands are adjacent across the seam) and
  * the rows repeat every pitchY. A band outline with stroke 'ink' has horizontal edges at the tile
- * boundary, which would show as seams, so it returns null in that case (CONVENTIONS §3.3).
+ * boundary, which would show as seams, so it returns null in that case (CONVENTIONS §3.3). The 'inner'
+ * outline is a vertical line through the whole tile height and repeats without a seam. Explicit rowY: null.
  * @param {import('../core/types.js').ResolvedLayer} layer
  * @param {import('../core/types.js').LayerContext} ctx
  * @returns {{w:number, h:number} | null}
  */
 export function period(layer, ctx) {
   if (layer.params.bandFrame.stroke === 'ink') return null;
+  if (layer.params.rowY !== undefined && layer.params.rowY !== null) return null; // hand-placed rows have no period
   return fitPeriod({ w: ctx.region.width, h: layer.params.pitchY }, ctx);
 }

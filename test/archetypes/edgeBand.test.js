@@ -173,3 +173,101 @@ test('unknown bandFrame key is rejected by validation with candidates', () => {
   assert.equal(out.errors.length, 1);
   assert.ok(out.errors[0].candidates.includes('stroke'));
 });
+
+// ---------------------------------------------------------------------------
+// Stage 3: inner band edge, explicit rows (rowY), motifX (verification against R2 prim data)
+// ---------------------------------------------------------------------------
+
+test("bandFrame.stroke 'inner' draws one vertical line at the inner edge of each band and an unstroked ground", () => {
+  const res = render(layerOf(resolve({ ...BASE, bandFrame: { stroke: 'inner' } })), ctxOf());
+  const polys = res.primitives.filter((p) => p.type === 'polygon');
+  assert.equal(polys.length, 2);
+  for (const p of polys) {
+    assert.equal(p.style.stroke, 'none');
+    assert.equal(p.style.fill, 'paper');
+  }
+  const lines = res.primitives.filter((p) => p.type === 'line');
+  assert.equal(lines.length, 2);
+  const xs = lines.map((l) => l.x1).sort((p, q) => p - q);
+  assert.ok(Math.abs(xs[0] - BAND) < TOL && Math.abs(xs[1] - (REGION.width - BAND)) < TOL);
+  for (const l of lines) {
+    assert.equal(l.x1, l.x2);
+    assert.ok(Math.abs(l.y1) < TOL && Math.abs(l.y2 - REGION.height) < TOL);
+    assert.equal(l.style.stroke, 'ink');
+  }
+  assert.equal(res.placed, 12, 'the motif layout is unchanged');
+});
+
+test("bandFrame 'inner' with sides right draws only the right inner edge", () => {
+  const res = render(layerOf(resolve({ ...BASE, sides: 'right', bandFrame: { stroke: 'inner', fill: 'none' } })), ctxOf());
+  assert.equal(res.primitives.filter((p) => p.type === 'polygon').length, 0, 'no ground, no outline');
+  const lines = res.primitives.filter((p) => p.type === 'line');
+  assert.equal(lines.length, 1);
+  assert.ok(Math.abs(lines[0].x1 - (REGION.width - BAND)) < TOL);
+});
+
+test("period exists for the 'inner' outline (no horizontal edge at the tile boundary)", () => {
+  const inner = layerOf(resolve({ ...BASE, bandFrame: { stroke: 'inner' } }));
+  assert.deepEqual(period(inner, ctxOf()), { w: REGION.width, h: 4.23 });
+});
+
+test('rowY as one list places the rows of both bands at the listed centres plus offset.y', () => {
+  const rowY = [3.619, 6.998, 10.88, 14.259];
+  const layer = { ...layerOf(resolve({ ...BASE, rowY })), offset: { x: 0, y: 0.5 } };
+  const res = render(layer, ctxOf());
+  assert.equal(res.placed, 8);
+  for (const col of [0, 1]) {
+    const ys = res.anchors.filter((a) => a.col === col).sort((p, q) => p.row - q.row).map((a) => a.y);
+    assert.equal(ys.length, rowY.length);
+    ys.forEach((y, k) => assert.ok(Math.abs(y - (rowY[k] + 0.5)) < TOL, `col ${col} row ${k}`));
+  }
+});
+
+test('rowY per band places the left and right rows independently and ignores origin', () => {
+  const rowY = { left: [3.619, 10.88], right: [3.38, 10.64, 17.638] };
+  const res = render(layerOf(resolve({ ...BASE, rowY })), ctxOf({ origin: 'topLeft' }));
+  const left = res.anchors.filter((a) => a.col === 0).map((a) => a.y);
+  const right = res.anchors.filter((a) => a.col === 1).map((a) => a.y);
+  assert.deepEqual(left, rowY.left);
+  assert.deepEqual(right, rowY.right);
+});
+
+test('rowY rows that leave the region are skipped like regular rows', () => {
+  const res = render(layerOf(resolve({ ...BASE, sides: 'left', rowY: [-5, 3.619, 40] })), ctxOf());
+  assert.equal(res.placed, 1);
+  assert.equal(res.skipped, 2);
+});
+
+test('rowY together with an explicit rows count raises a GeometryError', () => {
+  assert.throws(() => render(layerOf(resolve({ ...BASE, rows: 3, rowY: [1, 2, 3] })), ctxOf()),
+    (e) => e instanceof GeometryError && /rowY/.test(e.message));
+});
+
+test('rowY warns when the layer is density-scaled (positions are not scaled) and has no period', () => {
+  const layer = { ...layerOf(resolve({ ...BASE, rowY: [3.619, 6.998], bandFrame: { stroke: 'none' } })), densityScale: 2 };
+  const res = render(layer, ctxOf());
+  assert.ok(res.warnings.some((w) => /rowY is not density-scaled/.test(w)));
+  assert.equal(period(layer, ctxOf()), null);
+});
+
+test('rowY validation rejects an empty list and a per-band object without both bands', () => {
+  for (const bad of [[], { left: [1] }, 'auto']) {
+    const out = { errors: [], warnings: [] };
+    validateValue(PARAMS, { pitchY: 4, rowY: bad }, '', out);
+    assert.ok(out.errors.length > 0, `rowY ${JSON.stringify(bad)} must be rejected`);
+  }
+});
+
+test('motifX shifts the motifs of both bands horizontally; the bands stay put; default 0 keeps the centre', () => {
+  const base = render(layerOf(resolve(BASE)), ctxOf());
+  const moved = render(layerOf(resolve({ ...BASE, motifX: -2.1445, edgeMode: 'clip' })), ctxOf());
+  for (const col of [0, 1]) {
+    const a = base.anchors.find((q) => q.col === col && q.row === 0);
+    const b = moved.anchors.find((q) => q.col === col && q.row === 0);
+    assert.ok(Math.abs(b.x - (a.x - 2.1445)) < TOL);
+  }
+  const polysA = base.primitives.filter((p) => p.type === 'polygon');
+  const polysB = moved.primitives.filter((p) => p.type === 'polygon');
+  assert.deepEqual(polysA, polysB);
+  assert.equal(resolve(BASE).motifX, 0);
+});

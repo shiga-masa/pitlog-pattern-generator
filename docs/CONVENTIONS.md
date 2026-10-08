@@ -209,6 +209,12 @@ LayerResult = {
 ### 7.3.1 型ごとの補足(段階 2 で確定)
 - grid の `assign: 'rowcol'`: 巡回番号は (2·col + (row mod 2) + phase) mod n。千鳥 1/2 の格子を半ピッチの列で数えた x 位置の番号(R2 §47)。`core/lattice.js` の `cycleIndex` と grid.js は同じ式。
 - scatter の `sampling`: `'jitteredGrid'`(既定。ほぼ正方の格子の各セルに 1 本)、`'poisson'`(一様な候補を minDistance で棄却。minDistance 必須)、`'uniform'`(独立な一様乱数。minDistance は与えたときだけ適用)。`'uniform'` は他の 2 つの基準として残す。
+- grid の不等間隔格子(手置きの原本用。省略時は従来の等間隔格子で、`core/lattice.js` をそのまま使う): `rowPitches`(行 r から r+1 への行間の配列、巡回)、`colPitches`(行内の列間の配列。`rotations` と同じく `[[全行]]` か `[[偶数行], [奇数行]]`)、`rowShifts`(行ごとの x の追加ずらし、符号自由、巡回)。いずれも pt・density 区分 `length`(密度で 1/density、`fit` では rowPitches × fit.y、colPitches・rowShifts × fit.x)。
+  - 位置: y(r) = y0 + Σ_{i<r} rowPitches[i mod k]、x(r, c) = x0 + Σ_{j<c} L(r)[j mod 長さ] + (奇数行なら rowOffset) + rowShifts[r mod m]。
+  - `pitchX` / `pitchY` は必須のまま「公称ピッチ」として残り、比の rowOffset の換算、origin `'topLeft'` の最初の点 (pitchX/2, pitchY/2)、`LayerResult.pitch`(relation が読む)、rowsPerFrame に使う。位置は配列が決める。重なり警告は配列の最小の間隔で判定する。
+  - origin `'center'` は 1 行目の x の幅と全行の y の幅を中央に置く。rows/cols `'auto'` は閉区間に入る位置の数(cols は偶数・奇数リストの多い方)。
+  - 周期: 行周期は rowPitches・rowShifts の長さと(リストが 2 つなら)2 の最小公倍数を含み、高さは行間の巡回和。列周期は各リストの長さの最小公倍数を含み、幅は巡回和。**偶数行と奇数行のリストの幅が列周期で一致しなければ周期なし**(`period()` が null。`'period'` は frame に落として警告、明示の `'fit'` はエラー、§3.3)。
+  - relation で結ばれた層には書けない(GeometryError)。
 - edgeBand の `edgeMode`: `'auto'`(既定)はモチーフが帯幅に収まれば `'whole'`、帯幅より広ければ `'clip'`(R2 §63/§64 の実測ではレンズ 7.05 pt・かぎ形 7.38 pt が帯 6.92 pt より広く、中央に置くと枠を 0.3 pt 未満はみ出す)。
 
 ### 7.4 プリミティブ(`core/primitives.js`)
@@ -260,6 +266,7 @@ spec 検証 → options 検証 → 表ごとの既定(`defaults.defaultsForTable
 ## 10. プリセット作成規則(preset-1〜5)
 - 1 プリセット = 1 オブジェクト。`provenance: {doc, section, measured, notes?}` 必須。値はすべて報告の該当節から取り、報告に無い値を作らない。迷ったら値を空にして報告する。
 - 2 値交互のピッチは平均、行間不等は平均 + `notes` に「不等」、未測定は `null` + `measured: false`。
+- 等間隔(平均)では照合(個数・中心・IoU)に通らない手置きの grid は、実測の行間・列間を grid の `rowPitches` / `colPitches` / `rowShifts`(§7.3.1)に書いてよい。値は原本 prim の中心から測った値だけを書き、`notes` に測り方を書く。偶数行と奇数行で個数が違うとき、周期を閉じるために足す枠外の 1 間隔(測れない値)は「導出値: 偶数行の幅 − 奇数行の測定間隔の和」のように式と理由を `notes` に明記する。周期が長くなる・無くなる(`fit` に入りにくくなる)ことも `notes` に書く。
 - 線幅・枠は表ごとの既定(§8.3)に任せ、例外だけ書く(崩積土の `stroke.width: 0.239`、固結粘土の `frame.show: 'ink'` など)。
 - 色は書かない(ink/paper の既定に従う)。黒塗り = `fill: 'ink'`、白抜き = `fill: 'paper'`。
 - 模様なし行は `layers: [{id: 'none', archetype: 'empty'}]`。参照先のある模様なし行は `aliasOf`。

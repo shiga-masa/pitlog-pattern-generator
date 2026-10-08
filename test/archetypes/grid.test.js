@@ -324,3 +324,149 @@ test('render() passes the real lattice module; with the stub it fails with the l
   // Either the real lattice is implemented (then no error) or it is the core-A stub.
   if (err) assert.equal(err.owner, 'core-A');
 });
+
+// ---------------------------------------------------------------------------
+// Uneven lattice: rowPitches / colPitches / rowShifts (hand-placed originals)
+// ---------------------------------------------------------------------------
+
+/** Lattice that must not be called: proves the uneven path does not go through core/lattice.js. */
+const noLattice = {
+  latticePoints() {
+    throw new Error('latticePoints must not be called for an uneven lattice');
+  },
+  cycleIndex: testLattice.cycleIndex,
+};
+const xy = (r) => r.anchors.map((a) => [a.x, a.y]);
+const nearAll = (got, want, msg) => {
+  assert.equal(got.length, want.length, `${msg}: count ${got.length} != ${want.length}`);
+  got.forEach((g, i) => {
+    near(g[0], want[i][0], `${msg}[${i}].x`);
+    near(g[1], want[i][1], `${msg}[${i}].y`);
+  });
+};
+
+test('without uneven keys the regular lattice of core/lattice.js is used unchanged', () => {
+  const plain = run(layerOf({ rowOffset: 0.5 }));
+  assert.throws(() => renderGrid(noLattice, layerOf({ rowOffset: 0.5 }), ctxFor()), /must not be called/);
+  assert.deepEqual(xy(plain), [[5, 4], [15, 4], [25, 4], [10, 12], [20, 12], [30, 12]]);
+});
+
+test('rowPitches places row r at the cumulative sum of the cycled row gaps', () => {
+  const r = renderGrid(noLattice, layerOf({ rows: 4, cols: 1, rowPitches: [7, 5] }), ctxFor({ region: { x: 0, y: 0, width: 60, height: 40 } }));
+  // topLeft: first point at (pitchX/2, pitchY/2) = (5, 4); gaps 7, 5, 7
+  nearAll(xy(r), [[5, 4], [5, 11], [5, 16], [5, 23]], 'rows');
+});
+
+test('one colPitches list applies to every row, on top of rowOffset', () => {
+  const r = renderGrid(noLattice, layerOf({ rows: 2, cols: 3, rowOffset: { pt: 2 }, colPitches: [[9, 12]] }), ctxFor());
+  nearAll(xy(r), [[5, 4], [14, 4], [26, 4], [7, 12], [16, 12], [28, 12]], 'cols');
+});
+
+test('two colPitches lists apply by row parity and rowShifts adds a per-row x shift', () => {
+  const layer = layerOf({ rows: 3, cols: 2, rowOffset: 0.5, colPitches: [[9], [11]], rowShifts: [0, 0.5, -0.3] });
+  const r = renderGrid(noLattice, layer, ctxFor());
+  nearAll(xy(r), [[5, 4], [14, 4], [10.5, 12], [21.5, 12], [4.7, 20], [13.7, 20]], 'parity');
+});
+
+test('origin center centres the span of row 0 and of all rows of the uneven lattice', () => {
+  const layer = layerOf({ rows: 3, cols: 3, colPitches: [[10, 20]], rowPitches: [6, 10] });
+  const r = renderGrid(noLattice, layer, ctxFor({ origin: 'center', region: { x: 0, y: 0, width: 60, height: 30 } }));
+  // x span 30 -> x0 = 15; y span 16 -> y0 = 7
+  nearAll(xy(r).slice(0, 3), [[15, 7], [25, 7], [45, 7]], 'row 0');
+  near(r.anchors[8].y, 23, 'last row y');
+});
+
+test('origin {x, y} puts cell (0, 0) there and layer.offset moves the uneven lattice', () => {
+  const layer = layerOf({ rows: 2, cols: 2, rowPitches: [5] }, { offset: { x: 1, y: -1 } });
+  const r = renderGrid(noLattice, layer, ctxFor({ origin: { x: 3, y: 6 } }));
+  nearAll(xy(r), [[4, 5], [14, 5], [4, 10], [14, 10]], 'origin');
+});
+
+test('rows and cols auto count the uneven positions inside the closed region', () => {
+  // y: 0, 7, 12, 19, 24, 31 -> 5 rows within height 30; x even 0, 9, 21, 30 -> 4, odd 0, 11, 22, 33 -> 3
+  const layer = layerOf({ rows: 'auto', cols: 'auto', rowPitches: [7, 5], colPitches: [[9, 12], [11]], edgeMode: 'clip' });
+  const r = renderGrid(noLattice, layer, ctxFor({ origin: { x: 0, y: 0 }, region: { x: 0, y: 0, width: 30, height: 30 } }));
+  const rows = new Set(r.anchors.map((a) => a.row));
+  const cols = new Set(r.anchors.map((a) => a.col));
+  assert.equal(rows.size, 5);
+  assert.equal(cols.size, 4);
+});
+
+test('edgeMode whole counts uneven-lattice instances outside the region as skipped', () => {
+  const layer = layerOf({ rows: 2, cols: 3, colPitches: [[9, 30]] });
+  const r = renderGrid(noLattice, layer, ctxFor({ region: { x: 0, y: 0, width: 30, height: 30 } }));
+  assert.equal(r.placed, 4);
+  assert.equal(r.skipped, 2);
+});
+
+test('density 2 halves rowPitches, colPitches and rowShifts (length class) through resolveSpec', async () => {
+  const { resolveSpec } = await import('../../src/core/resolve.js');
+  const s = {
+    schema: 'zc-pattern/1.0.0', id: 'zc:111101002', table: '3-1', names: { ja: 'grid test' },
+    provenance: { doc: 'design', section: 'test', measured: false },
+    layers: [{ id: 'dots', archetype: 'grid', motif: { kind: 'dot', d: 1.3 },
+      params: { pitchX: 10, pitchY: 8, rowPitches: [7, 9], colPitches: [[9, 11], [10]], rowShifts: [0, -0.4] } }],
+  };
+  const p = resolveSpec(s, { density: 2 }).drawSpec.layers[0].params;
+  assert.deepEqual(p.rowPitches, [3.5, 4.5]);
+  assert.deepEqual(p.colPitches, [[4.5, 5.5], [5]]);
+  assert.deepEqual(p.rowShifts, [0, -0.2]);
+  assert.equal(p.pitchX, 5);
+});
+
+test('the schema rejects a non-positive row gap and more than two colPitches lists', async () => {
+  const { validateValue, applyDefaults } = await import('../../src/core/schema.js');
+  const errs = (params) => {
+    const out = { errors: [], warnings: [] };
+    validateValue(PARAMS, applyDefaults(PARAMS, { pitchX: 10, pitchY: 8, ...params }), '/params', out);
+    return out.errors.map((e) => `${e.path}: ${e.message}`).join(' ');
+  };
+  assert.match(errs({ rowPitches: [5, 0] }), /rowPitches/);
+  assert.match(errs({ colPitches: [[1], [2], [3]] }), /colPitches/);
+  assert.equal(errs({ rowPitches: [5, 6], colPitches: [[9], [11]], rowShifts: [-0.3, 0.2] }), '');
+});
+
+test('period of an uneven lattice is the cycled sums; ctx.fit scales them', () => {
+  const layer = layerOf({ rows: 2, cols: 2, rowOffset: 0.5, rowPitches: [7, 5], colPitches: [[9, 12], [10, 11]] });
+  const p = period(layer, { results: {} });
+  near(p.w, 21, 'w');
+  near(p.h, 12, 'h');
+  const f = period(layer, { results: {}, fit: { x: 1.02, y: 0.97 } });
+  near(f.w, 21 * 1.02, 'fitted w');
+  near(f.h, 12 * 0.97, 'fitted h');
+});
+
+test('rowShifts and a cycled rowPitches list lengthen the row period to their lcm', () => {
+  const layer = layerOf({ rows: 2, cols: 1, rowPitches: [7, 5, 6], rowShifts: [0, 0.5] });
+  const p = period(layer, { results: {} });
+  near(p.h, 2 * 18, 'h over lcm(3, 2) = 6 rows');
+});
+
+test('two colPitches lists of different span have no period, and drawing a period tile throws', () => {
+  const layer = layerOf({ rows: 2, cols: 2, colPitches: [[9, 12], [10]] });
+  assert.equal(period(layer, { results: {} }), null);
+  assert.throws(() => renderGrid(noLattice, layer, ctxFor({ tileMode: 'period' })), (e) => e instanceof GeometryError && /colPitches even\/odd lists span/.test(e.message));
+});
+
+test('a period tile of an uneven lattice draws each cell once, wrapped into the tile', () => {
+  const layer = layerOf({ rows: 2, cols: 2, rowOffset: 0.5, rowPitches: [7, 5], colPitches: [[9, 12], [10, 11]] }, { motif: { kind: 'dot', d: 1 } });
+  const r = renderGrid(noLattice, layer, ctxFor({ tileMode: 'period' }));
+  const p = period(layer, { results: {} });
+  assert.equal(r.placed, 4);
+  for (const a of r.anchors) assert.ok(a.x >= 0 && a.x < p.w && a.y >= 0 && a.y < p.h, JSON.stringify(a));
+  // first point (5, 4); odd row: 5 + 0.5·10 = 10 and 10 + 10 = 20 at y 11
+  const got = xy(r).sort((a, b) => a[1] - b[1] || a[0] - b[0]);
+  nearAll(got, [[5, 4], [14, 4], [10, 11], [20, 11]], 'tile');
+});
+
+test('an uneven key on a layer tied by relation is rejected with the reason', () => {
+  const ref = { pitch: { x: 10, y: 8 }, anchors: [] };
+  const layer = layerOf({ rowPitches: [7] }, { relation: { to: 'big', pitchRatio: 1 } });
+  assert.throws(() => renderGrid(noLattice, layer, ctxFor({ results: { big: ref } })), (e) => e instanceof GeometryError && /rowPitches cannot be combined with relation/.test(e.message));
+});
+
+test('the overlap warning uses the smallest uneven gap', () => {
+  const layer = layerOf({ rows: 2, cols: 2, rowPitches: [1.5] }, { motif: { kind: 'dot', d: 2 } });
+  const r = renderGrid(noLattice, layer, ctxFor());
+  assert.ok(r.warnings.some((w) => /pitchY 1\.500/.test(w)), r.warnings.join(' | '));
+});

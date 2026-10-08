@@ -5,9 +5,15 @@
  * this archetype's parameters: validation, defaults and density scaling all read it.
  *
  * The diagonal joins the frame corners, so it follows the frame size and is never repeated.
- * count 2 draws a pair of parallel lines whose horizontal distance is `gap`; the pair is placed
- * symmetrically about the diagonal (each line offset by gap/2 horizontally). This placement is a
- * provisional decision (see the report of arch-3).
+ * count 2 draws a pair of parallel lines whose horizontal distance is `gap`. `placement` chooses how
+ * the pair sits in the frame:
+ *  - 'centered' (default): both lines keep the corner-to-corner slope H/W and are offset by ±gap/2
+ *    horizontally, then clipped to the frame (each line misses one corner by gap/2).
+ *  - 'corners': each line ends in one frame corner and on the opposite edge gap short of the other
+ *    corner, so both lines span the full height with slope H/(W - gap). For '/' the lines are
+ *    (0,H)-(W-gap,0) and (gap,H)-(W,0); for '\' they are (0,0)-(W-gap,H) and (gap,0)-(W,H).
+ *    This is the geometry of R3 廃棄物 / 盛土 (prim t4_1_p057_h0_r01, t4_2_p057_h1_r00).
+ * For count 1 the placement makes no difference (the single line joins the corners).
  * Stage 2: the lines are tied to the frame corners, so spec.origin is not used and a non-zero
  * layer.offset is rejected (GeometryError) rather than ignored.
  */
@@ -32,6 +38,7 @@ export const PARAMS = obj({
   direction: enumOf(['/', '\\', 'x'], 'diagonal(s) between region corners', { required: true }),
   count: enumOf([1, 2], 'lines per diagonal', { default: 1 }),
   gap: fixed('horizontal distance between the two lines when count = 2 (pt) (R3: 2.78)', { min: 0, default: 0 }),
+  placement: enumOf(['centered', 'corners'], "count 2: 'centered' offsets both lines by ±gap/2 from the diagonal; 'corners' ends each line in one frame corner (R3)", { default: 'centered' }),
 }, 'frame diagonal parameters (design §2.2); not density-scaled');
 
 /** Extension (pt) of the infinite line before clipping to the frame. Larger than any frame diagonal. */
@@ -51,6 +58,7 @@ export function render(layer, ctx) {
   const off = offsetOf(layer);
   if (off.x !== 0 || off.y !== 0) throw new GeometryError(`frameDiagonal ${layer.id}: the lines join the frame corners; layer.offset (${off.x}, ${off.y}) cannot be applied`);
   if (p.count === 2 && !(p.gap > 0)) throw new GeometryError(`frameDiagonal ${layer.id}: count 2 needs gap > 0 (got ${p.gap}); the two lines would coincide`);
+  if (p.count === 2 && p.placement === 'corners' && !(p.gap < W)) throw new GeometryError(`frameDiagonal ${layer.id}: placement 'corners' needs gap < frame width (gap ${p.gap}, width ${W})`);
 
   const TL = { x: x0, y: y0 };
   const TR = { x: x0 + W, y: y0 };
@@ -60,6 +68,18 @@ export function render(layer, ctx) {
   const diagonals = p.direction === '/' ? [[BL, TR]]
     : p.direction === '\\' ? [[TL, BR]]
       : [[BL, TR], [TL, BR]];
+  const warnings = ctx.jitter ? [`layer ${layer.id}: jitter is not applied to frameDiagonal`] : [];
+
+  if (p.count === 2 && p.placement === 'corners') {
+    // Each diagonal runs between the bottom and top edges; P is its left end, Q its right end.
+    // Line 1 keeps P and moves Q left by gap; line 2 moves P right by gap and keeps Q.
+    const primitives = [];
+    for (const [P, Q] of diagonals) {
+      primitives.push(line(P.x, P.y, Q.x - p.gap, Q.y, STYLE));
+      primitives.push(line(P.x + p.gap, P.y, Q.x, Q.y, STYLE));
+    }
+    return { primitives, placed: primitives.length, skipped: 0, warnings };
+  }
   const shifts = p.count === 2 ? [-p.gap / 2, p.gap / 2] : [0];
   const ext = EXTEND_FACTOR * (W + H);
   const region = { x: x0, y: y0, width: W, height: H };
@@ -84,7 +104,6 @@ export function render(layer, ctx) {
     }
   }
 
-  const warnings = ctx.jitter ? [`layer ${layer.id}: jitter is not applied to frameDiagonal`] : [];
   return { primitives, placed, skipped, warnings };
 }
 

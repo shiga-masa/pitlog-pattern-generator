@@ -231,3 +231,128 @@ test('unknown parameter keys are rejected by validation with a candidate list', 
   assert.match(out.errors[0].message, /unknown key/);
   assert.ok(out.errors[0].candidates.includes('bandSpacing'));
 });
+
+// ---------------------------------------------------------------------------
+// Uneven steps (hand-placed originals) and edgeMode 'trim'
+// ---------------------------------------------------------------------------
+
+/** Two alternating steps (the R3 volcanic-ash-bearing kind of unevenness: dy -3.40 and -3.96). */
+const UNEVEN = [{ x: 7.07, y: -3.40 }, { x: 7.07, y: -3.96 }];
+
+test('steps places motif j at base + the sum of the first j steps, cycling the list', () => {
+  const res = render(layerOf(resolve({ bands: 1, steps: [UNEVEN] })), dotCtx());
+  const c = { x: REGION.width / 2, y: REGION.height / 2 };
+  const at = (j) => res.anchors.find((q) => q.col === j);
+  assert.ok(Math.abs(at(0).x - c.x) < TOL && Math.abs(at(0).y - c.y) < TOL);
+  assert.ok(Math.abs(at(1).y - (c.y - 3.40)) < TOL);
+  assert.ok(Math.abs(at(2).y - (c.y - 3.40 - 3.96)) < TOL);
+  assert.ok(Math.abs(at(2).x - (c.x + 2 * 7.07)) < TOL);
+});
+
+test('steps walks backwards from j = -1 with the list read from its end', () => {
+  const res = render(layerOf(resolve({ bands: 1, steps: [UNEVEN] })), dotCtx());
+  const c = { x: REGION.width / 2, y: REGION.height / 2 };
+  const m1 = res.anchors.find((q) => q.col === -1);
+  const m2 = res.anchors.find((q) => q.col === -2);
+  assert.ok(Math.abs(m1.y - (c.y + 3.96)) < TOL, `j -1 uses the last step: ${m1.y}`);
+  assert.ok(Math.abs(m2.y - (c.y + 3.96 + 3.40)) < TOL);
+  assert.ok(Math.abs(m2.x - (c.x - 2 * 7.07)) < TOL);
+});
+
+test('steps with one list per band gives each band its own sequence', () => {
+  const p = { bands: 2, bandSpacing: 4, steps: [[{ x: 5, y: -2.5 }], [{ x: 6, y: -3 }]] };
+  const res = render(layerOf(resolve(p)), dotCtx());
+  for (const [row, dx] of [[0, 5], [1, 6]]) {
+    const r = res.anchors.filter((q) => q.row === row).sort((a, b) => a.col - b.col);
+    assert.ok(r.length >= 2);
+    for (let i = 1; i < r.length; i++) assert.ok(Math.abs(r[i].x - r[i - 1].x - dx) < TOL);
+  }
+});
+
+test('steps covers the region: every motif touching the region is drawn and none is missed', () => {
+  const res = render(layerOf(resolve({ bands: 1, steps: [UNEVEN], edgeMode: 'clip' })), dotCtx());
+  const cols = res.anchors.map((q) => q.col).sort((a, b) => a - b);
+  for (let i = 1; i < cols.length; i++) assert.equal(cols[i] - cols[i - 1], 1, 'contiguous columns');
+  const first = res.anchors.find((q) => q.col === cols[0]);
+  const last = res.anchors.find((q) => q.col === cols[cols.length - 1]);
+  // the next motif beyond either end would not touch the region (clip mode keeps anything touching it)
+  const mod = (j) => ((j % 2) + 2) % 2;
+  const before = UNEVEN[mod(first.col - 1)];
+  const after = UNEVEN[mod(last.col)];
+  const misses = (x, y) => x + 0.71 < 0 || x - 0.71 > REGION.width || y + 0.71 < 0 || y - 0.71 > REGION.height;
+  assert.ok(misses(first.x - before.x, first.y - before.y), 'motif before the first is outside');
+  assert.ok(misses(last.x + after.x, last.y + after.y), 'motif after the last is outside');
+});
+
+test('the steps descriptor is in the length density class (pt, scaled by 1/density)', () => {
+  const v = PARAMS.fields.steps.items.items;
+  assert.equal(v.fields.x.density, 'length');
+  assert.equal(v.fields.y.density, 'length');
+  assert.equal(v.fields.x.unit, 'pt');
+});
+
+test('steps together with step raises a GeometryError (give only steps)', () => {
+  const p = { bands: 1, steps: [UNEVEN], step: { x: 7, y: -3 }, bandPhase: 0, bandOffset: 0, elementAngle: 'band', edgeMode: 'auto', angle: null };
+  assert.throws(() => render(layerOf(p), dotCtx()), (e) => e instanceof GeometryError && /give only steps/.test(e.message));
+});
+
+test('steps together with a non-zero bandPhase raises a GeometryError', () => {
+  const p = { bands: 2, bandSpacing: 3, steps: [UNEVEN], bandPhase: 0.5, bandOffset: 0, elementAngle: 'band', edgeMode: 'auto', angle: null };
+  assert.throws(() => render(layerOf(p), dotCtx()), (e) => e instanceof GeometryError && /bandPhase/.test(e.message));
+});
+
+test('a steps list count other than 1 or bands raises a GeometryError naming the count', () => {
+  const p = { bands: 3, bandSpacing: 3, steps: [UNEVEN, UNEVEN], bandPhase: 0, bandOffset: 0, elementAngle: 'band', edgeMode: 'auto', angle: null };
+  assert.throws(() => render(layerOf(p), dotCtx()), (e) => e instanceof GeometryError && /one list per band \(3\), got 2/.test(e.message));
+});
+
+test('a step that runs backwards along the band raises a GeometryError', () => {
+  const p = { bands: 1, steps: [[{ x: 7, y: -3 }, { x: 7, y: -3 }, { x: -2, y: 1 }]], bandPhase: 0, bandOffset: 0, elementAngle: 'band', edgeMode: 'auto', angle: null };
+  assert.throws(() => render(layerOf(p), dotCtx()), (e) => e instanceof GeometryError && /runs backwards/.test(e.message));
+});
+
+/** R3 table 4-3 silty: dashes 9.69 pt parallel to the band. */
+function dashCtx(style = { stroke: 'ink' }) {
+  const seg = [line(-4.845, 0, 4.845, 0, style)];
+  return dotCtx(REGION, { motifPrims: seg, ext: { w: 9.69, h: 0 } });
+}
+const SILTY = { bands: 3, bandShift: { x: 1.241, y: 2.209 }, step: { x: 11.329, y: -5.671 } };
+
+test("edgeMode trim cuts line motifs at the region: every endpoint lies inside, same instances as 'clip'", () => {
+  const clip = render(layerOf(resolve({ ...SILTY, edgeMode: 'clip' })), dashCtx());
+  const trim = render(layerOf(resolve({ ...SILTY, edgeMode: 'trim' })), dashCtx());
+  assert.equal(trim.placed, clip.placed);
+  assert.equal(trim.skipped, clip.skipped);
+  let shortened = 0;
+  for (const p of trim.primitives) {
+    for (const [x, y] of [[p.x1, p.y1], [p.x2, p.y2]]) {
+      assert.ok(x >= -TOL && x <= REGION.width + TOL && y >= -TOL && y <= REGION.height + TOL, `endpoint (${x}, ${y})`);
+    }
+    if (Math.hypot(p.x2 - p.x1, p.y2 - p.y1) < 9.69 - 1e-6) shortened += 1;
+  }
+  assert.ok(shortened > 0, 'the edge dashes are shortened');
+});
+
+test('edgeMode trim keeps interior dashes exactly as clip draws them', () => {
+  const clip = render(layerOf(resolve({ ...SILTY, edgeMode: 'clip' })), dashCtx());
+  const trim = render(layerOf(resolve({ ...SILTY, edgeMode: 'trim' })), dashCtx());
+  const inside = (p) => [p.x1, p.x2].every((x) => x >= 0 && x <= REGION.width) && [p.y1, p.y2].every((y) => y >= 0 && y <= REGION.height);
+  const a = clip.primitives.filter(inside);
+  const b = trim.primitives.filter((p) => Math.abs(Math.hypot(p.x2 - p.x1, p.y2 - p.y1) - 9.69) < 1e-9);
+  assert.deepEqual(b, a);
+});
+
+test('edgeMode trim advances the dash offset by the length cut from the start of a dashed line', () => {
+  const ctx = dotCtx(REGION, { motifPrims: [line(-4, 0, 4, 0, { stroke: 'ink', dash: [1, 1] })], ext: { w: 8, h: 0 } });
+  const p = { bands: 1, angle: 0, alongPitch: 20, elementAngle: 0, edgeMode: 'trim' };
+  const res = render(layerOf(resolve(p)), { ...ctx, origin: { x: 1, y: 10 } });
+  const cut = res.primitives.find((q) => q.y1 === 10 && Math.abs(q.x1) < TOL);
+  assert.ok(cut, 'the line crossing x = 0 is present and starts on the edge');
+  assert.ok(Math.abs(cut.style.dashOffset - 3) < TOL, `dashOffset ${cut.style.dashOffset}`);
+});
+
+test('edgeMode trim on a closed motif raises a GeometryError naming the primitive type', () => {
+  const ctx = dotCtx(REGION, { motifPrims: [circle(0, 0, 1.415, { fill: 'paper' })], ext: { w: 2.83, h: 2.83 } });
+  assert.throws(() => render(layerOf(resolve({ ...GRAVEL, edgeMode: 'trim' })), ctx),
+    (e) => e instanceof GeometryError && /trim/.test(e.message) && /circle/.test(e.message));
+});
