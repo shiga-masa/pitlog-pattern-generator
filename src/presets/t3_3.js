@@ -41,10 +41,10 @@ export const PRESETS = [
   {
     schema: 'zc-pattern/1.0.0', id: 'zc:219113000', table: '3-3', code: '219113000', symbol: 'Hnb',
     names: { ja: '角閃石岩' },
-    provenance: { doc: 'R1', section: '3.4', measured: true, notes: '格子 G1 (§3 冒頭表)。記号: 横線 1 本 (長さ 8.37)、縦線 2 本 (長さ 5.60, 間隔 2.85, 中央配置) (§3.4)。' },
+    provenance: { doc: 'R1', section: '3.4', measured: true, notes: '格子 G1 (§3 冒頭表)。記号: 横線 1 本 (長さ 8.37)、縦線 2 本 (長さ 5.60, 間隔 2.85, 中央配置) (§3.4)。pitchY 8.49 = 横線の行間 8.43 (y 5.78/14.21/22.63) と縦線の行間 8.55 (中心 y 5.66/14.21/22.75) の平均 (§3.4, §3.5; 量子化の 2 値)。' },
     layers: [
       {
-        id: 'glyph', archetype: 'grid', params: { pitchX: 22.49, pitchY: 8.55, rowOffset: 0.5, rows: 3 },
+        id: 'glyph', archetype: 'grid', params: { pitchX: 22.49, pitchY: 8.49, rowOffset: 0.5, rows: 3 },
         motif: { kind: 'lineGlyph', hLines: 1, hLen: 8.37, vLines: 2, vLen: 5.60, vGap: 2.85 },
       },
     ],
@@ -52,10 +52,10 @@ export const PRESETS = [
   {
     schema: 'zc-pattern/1.0.0', id: 'zc:219122200', table: '3-3', code: '219122200', symbol: 'Gr',
     names: { ja: '花崗岩' },
-    provenance: { doc: 'R1', section: '3.5', measured: true, notes: '格子 G1 (§3 冒頭表)。記号: 横線 1 本 (長さ 8.37)、縦線 1 本 (長さ 8.49)、交点は中央 (§3.5)。' },
+    provenance: { doc: 'R1', section: '3.5', measured: true, notes: '格子 G1 (§3 冒頭表)。記号: 横線 1 本 (長さ 8.37)、縦線 1 本 (長さ 8.49)、交点は中央 (§3.5)。pitchY 8.49 = 横線の行間 8.43 (y 5.78/14.21/22.63) と縦線の行間 8.55 (中心 y 5.66/14.21/22.76) の平均 (§3.5; 量子化の 2 値)。許容する逸脱: 原本は横線と縦線の中心が x・y とも 0.12 ずれる (§3.5 交点) ため、残差 ±0.065 pt が 600 dpi で 1 px の差になり IoU がセルごとに 0.83〜0.93 で揺れる (同一 XObject の花崗閃緑岩は合格)。' },
     layers: [
       {
-        id: 'glyph', archetype: 'grid', params: { pitchX: 22.49, pitchY: 8.55, rowOffset: 0.5, rows: 3 },
+        id: 'glyph', archetype: 'grid', params: { pitchX: 22.49, pitchY: 8.49, rowOffset: 0.5, rows: 3 },
         motif: { kind: 'lineGlyph', hLines: 1, hLen: 8.37, vLines: 1, vLen: 8.49 },
       },
     ],
@@ -69,7 +69,8 @@ export const PRESETS = [
   {
     schema: 'zc-pattern/1.0.0', id: 'zc:219122600', table: '3-3', code: '219122600', symbol: 'Tn',
     names: { ja: 'トーナル岩' },
-    provenance: { doc: 'R1', section: '3.7', measured: true, notes: '格子 G2 (px 16.86 / py 8.55 / 千鳥 0.5 / 3 行, §3 冒頭表)。記号: 十字を 45° 回した × (腕の全長 9.97 = 9.81〜10.14 の平均, 回転 45°, §3.7)。' },
+    provenance: { doc: 'R1', section: '3.7', measured: true, notes: '格子 G2 (px 16.86 / py 8.55 / 千鳥 0.5 / 3 行, §3 冒頭表)。記号: 十字を 45° 回した × (腕の全長 9.97 = 9.81〜10.14 の平均, 回転 45°, §3.7)。原点: 最初の記号の中心 (6.29, 6.38) (§3.7 行 1 cx・行 cy)。' },
+    origin: { x: 6.29, y: 6.38 },
     layers: [
       {
         id: 'glyph', archetype: 'grid', params: { pitchX: 16.86, pitchY: 8.55, rowOffset: 0.5, rows: 3 },
@@ -104,7 +105,7 @@ export const PRESETS = [
   {
     schema: 'zc-pattern/1.0.0', id: 'zc:219125503', table: '3-3', code: '219125503', symbol: 'Dl',
     names: { ja: 'ドレライト' },
-    provenance: { doc: 'R1', section: '3.12', measured: true, notes: '格子 G1 (§3 冒頭表)。記号: 横線 1 本 (長さ 8.37) の下に縦線 1 本 (長さ 5.60) が立つ ⊥ 形 (vAnchor bottom, §3.12)。' },
+    provenance: { doc: 'R1', section: '3.12', measured: true, notes: '格子 G1 (§3 冒頭表)。記号: 横線 1 本 (長さ 8.37) の下に縦線 1 本 (長さ 5.60) が立つ ⊥ 形 (vAnchor bottom, §3.12)。許容する逸脱: 原本の横線の y は 8.43/17.10/25.52 で行間が 8.67/8.42 と交互に揺れ、1 列目の縦線は横線の中央から 0.12 左にずれる (量子化)。' },
     layers: [
       {
         id: 'glyph', archetype: 'grid', params: { pitchX: 22.49, pitchY: 8.55, rowOffset: 0.5, rows: 3 },
@@ -115,17 +116,19 @@ export const PRESETS = [
   {
     schema: 'zc-pattern/1.0.0', id: 'zc:221112000', table: '3-3', code: '221112000', symbol: 'Ry',
     names: { ja: '流紋岩' },
-    provenance: { doc: 'R1', section: '3.13', measured: true, notes: '格子 G3 (px 16.86 / py 7.14 / 千鳥 0.5 / 4 行, §3 冒頭表)。記号: L 字 (縦 5.77, 横 5.70, 角は左下) (§3.13)。' },
+    provenance: { doc: 'R1', section: '3.13', measured: true, notes: '格子 G3 (px 16.86 / py 7.14 / 千鳥 0.5 / 4 行, §3 冒頭表)。記号: L 字 (縦 5.77, 横 5.70, 角は左下) (§3.13)。原点: 最初の記号の中心 (6.88, 3.49)、千鳥のずらし量 8.55 pt (§3.13)。' },
+    origin: { x: 6.88, y: 3.49 },
     layers: [
-      { id: 'glyph', archetype: 'grid', params: { pitchX: 16.86, pitchY: 7.14, rowOffset: 0.5, rows: 4 }, motif: { kind: 'L', vLen: 5.77, hLen: 5.70, corner: 'bottomLeft' } },
+      { id: 'glyph', archetype: 'grid', params: { pitchX: 16.86, pitchY: 7.14, rowOffset: { pt: 8.55 }, rows: 4 }, motif: { kind: 'L', vLen: 5.77, hLen: 5.70, corner: 'bottomLeft' } },
     ],
   },
   {
     schema: 'zc-pattern/1.0.0', id: 'zc:221121000', table: '3-3', code: '221121000', symbol: 'Da',
     names: { ja: 'デイサイト' },
-    provenance: { doc: 'R1', section: '3.14', measured: true, notes: '格子 G2 (§3 冒頭表)。記号: L 字 (縦 5.66 = 5.54〜5.78 の平均, 横 5.70, 角は左下) (§3.14)。' },
+    provenance: { doc: 'R1', section: '3.14', measured: true, notes: '格子 G2 (§3 冒頭表)。記号: L 字 (縦 5.66 = 5.54〜5.78 の平均, 横 5.70, 角は左下) (§3.14)。原点: 最初の記号の中心 (6.88, 5.66)、千鳥のずらし量 8.55 pt (§3.14)。' },
+    origin: { x: 6.88, y: 5.66 },
     layers: [
-      { id: 'glyph', archetype: 'grid', params: { pitchX: 16.86, pitchY: 8.55, rowOffset: 0.5, rows: 3 }, motif: { kind: 'L', vLen: 5.66, hLen: 5.70, corner: 'bottomLeft' } },
+      { id: 'glyph', archetype: 'grid', params: { pitchX: 16.86, pitchY: 8.55, rowOffset: { pt: 8.55 }, rows: 3 }, motif: { kind: 'L', vLen: 5.66, hLen: 5.70, corner: 'bottomLeft' } },
     ],
   },
   {

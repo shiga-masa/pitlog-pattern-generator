@@ -13,9 +13,9 @@ export const PRESETS = [
   {
     schema: 'zc-pattern/1.0.0', id: 'zc:111000000', table: '3-2', code: '111000000', symbol: 'Tl',
     names: { ja: '崖錐堆積物' },
-    provenance: { doc: 'R1', section: '2.1', measured: true, notes: '底辺 5.63 (5.46〜5.70 の平均)、高さ 4.57 (§2.1)。px 14.05 / py 5.70 / 千鳥 0.5 / 4 行 (§2.1)。白抜き (paper) (§2.1)。' },
+    provenance: { doc: 'R1', section: '2.1', measured: true, notes: '底辺 5.63 (5.46〜5.70 の平均)、高さ 4.57 (§2.1)。px 14.05 / py 5.70 / 千鳥 0.5 / 4 行 (§2.1)。白抜き (paper) (§2.1)。offset y -0.54 は行 cy = 5.18〜22.27 (§2.1) の中央が枠の中心より上にある量 (原本 prim で最小二乗)。' },
     layers: [
-      { id: 'talus', archetype: 'grid', params: { pitchX: 14.05, pitchY: 5.70, rowOffset: 0.5, rows: 4 }, motif: { kind: 'triangle', base: 5.63, height: 4.57, fill: 'paper' } },
+      { id: 'talus', archetype: 'grid', params: { pitchX: 14.05, pitchY: 5.70, rowOffset: 0.5, rows: 4 }, offset: { x: 0, y: -0.54 }, motif: { kind: 'triangle', base: 5.63, height: 4.57, fill: 'paper' } },
     ],
   },
   {
@@ -23,16 +23,11 @@ export const PRESETS = [
     names: { ja: '扇状地堆積物' },
     provenance: {
       doc: 'R1', section: '2.2', measured: true,
-      notes: '列ごとに点と白丸が交互、行ごとに位相反転 (§2.2)。白丸 22.12 と点 22.04 の同種間隔の平均 22.08 の半分を px 11.1 (設計表 §1.5 の値) (§2.2)。py: 白丸 7.95 と点 8.55 の行ピッチの平均 8.25 (設計表の 8.0 とは不一致のため報告値の平均を採った) (§2.2)。ro 0 (行の先頭 x が 0.6 pt 以内でそろう, §2.2)。点 1.3 (幅 1.36 と高さ 1.23 の平均)、白丸 7.0 (§2.2)。',
+      notes: '点と白丸が同じ行で交互、行ごとに入れ替わる (§2.2)。点と白丸で行ピッチが違う (点 8.55、白丸 7.95, §2.2) ので 1 つの格子の cycle では表せず、図形ごとに 2 層の千鳥格子 (ro 0.5、3 行 × 3 列) に分けた。px は同種間隔 (点 22.04、白丸 22.12, §2.2)。点 1.3 (幅 1.36 と高さ 1.23 の平均)、白丸 7.0 (§2.2)。offset は原本 prim の中心座標 (§2.2 の cx/cy と同じ) に最小二乗で合わせた値: 点 (-0.03, 0.05)、白丸は 1 行目が 2 個なので半ピッチ左へ (-10.64, 0)。列間隔が 10.0〜11.4 と不揃いで (手置き, §2.2 ランダム性) 中心誤差が残る。',
     },
     layers: [
-      {
-        id: 'mixed', archetype: 'grid',
-        params: {
-          pitchX: 11.1, pitchY: 8.25, rowOffset: 0, rows: 3, assign: 'col', phase: 0,
-          cycle: [{ kind: 'dot', d: 1.3 }, { kind: 'circle', d: 7.0, fill: 'paper' }],
-        },
-      },
+      { id: 'dots', archetype: 'grid', params: { pitchX: 22.04, pitchY: 8.55, rowOffset: 0.5, rows: 3, cols: 3 }, offset: { x: -0.03, y: 0.05 }, motif: { kind: 'dot', d: 1.3 } },
+      { id: 'circles', archetype: 'grid', params: { pitchX: 22.12, pitchY: 7.95, rowOffset: 0.5, rows: 3, cols: 3 }, offset: { x: -10.64, y: 0 }, motif: { kind: 'circle', d: 7.0, fill: 'paper' } },
     ],
   },
   {
@@ -40,16 +35,11 @@ export const PRESETS = [
     names: { ja: '河床堆積物' },
     provenance: {
       doc: 'R1', section: '2.3', measured: true,
-      notes: '扇状地 (§2.2) と同じ部品で、列の位相が逆 (phase 1) (§2.3)。px 10.6 = (丸 21.29 と点 21.09 の平均) / 2 (§2.3)。py 8.25 は扇状地と同じく報告の行ピッチの平均 (§2.3, §2.2)。ro 0 (§2.2 と同様)。',
+      notes: '扇状地 (§2.2) と同じ部品で丸と点の位置が逆 (§2.3)。扇状地と同じく図形ごとに 2 層の千鳥格子 (ro 0.5、3 行 × 3 列)。px は同種間隔 (丸 21.29、点 21.09, §2.3)。py は行 y (丸 6.26, 14.21, 22.15 → 7.95、点 5.66, 14.37, 22.75 → 8.55, §2.3)。offset は原本 prim の中心座標に最小二乗で合わせた値: 丸 (1.01, 0)、点は 1 行目が 2 個なので半ピッチ左へ (-9.90, 0.07)。±1 pt の不揃い (手置き, §2.3) で中心誤差が残る。',
     },
     layers: [
-      {
-        id: 'mixed', archetype: 'grid',
-        params: {
-          pitchX: 10.6, pitchY: 8.25, rowOffset: 0, rows: 3, assign: 'col', phase: 1,
-          cycle: [{ kind: 'dot', d: 1.3 }, { kind: 'circle', d: 7.0, fill: 'paper' }],
-        },
-      },
+      { id: 'circles', archetype: 'grid', params: { pitchX: 21.29, pitchY: 7.95, rowOffset: 0.5, rows: 3, cols: 3 }, offset: { x: 1.01, y: 0 }, motif: { kind: 'circle', d: 7.0, fill: 'paper' } },
+      { id: 'dots', archetype: 'grid', params: { pitchX: 21.09, pitchY: 8.55, rowOffset: 0.5, rows: 3, cols: 3 }, offset: { x: -9.90, y: 0.07 }, motif: { kind: 'dot', d: 1.3 } },
     ],
   },
   {
@@ -63,16 +53,11 @@ export const PRESETS = [
     names: { ja: '氾濫原堆積物' },
     provenance: {
       doc: 'R1', section: '2.5', measured: true,
-      notes: '点と水平短線が列ごとに交互、行ごとに位相反転 (§2.5)。px 11.05 = (点 21.92 と線 22.26 の平均) / 2 (§2.5)。py 8.5 = 点と線の行ピッチ (8.43 / 8.55) の平均付近 (§2.5)。線長 8.44 = 8.31〜8.55 の平均 (§2.5)。ro 0 (§2.5)。',
+      notes: '点と水平短線が同じ行で交互、行ごとに入れ替わる (§2.5)。図形ごとに 2 層の千鳥格子 (ro 0.5、3 行 × 3 列)。px は同種間隔 (点 21.92、線 22.26, §2.5)。py は行 y (点 5.90, 14.51, 22.75 → 8.43、線 5.78, 14.21, 22.88 → 8.55, §2.5)。線長 8.44 = 8.31〜8.55 の平均 (§2.5)。offset は原本 prim の中心座標に最小二乗で合わせた値: 点 (1.23, 0.17)、線は 1 行目が 2 本なので半ピッチ左へ (-9.69, 0.07)。間隔 21.0〜22.6 の不揃い (§2.5) で中心誤差が残る。',
     },
     layers: [
-      {
-        id: 'mixed', archetype: 'grid',
-        params: {
-          pitchX: 11.05, pitchY: 8.5, rowOffset: 0, rows: 3, assign: 'col', phase: 0,
-          cycle: [{ kind: 'dot', d: 1.3 }, { kind: 'hline', length: 8.44 }],
-        },
-      },
+      { id: 'dots', archetype: 'grid', params: { pitchX: 21.92, pitchY: 8.43, rowOffset: 0.5, rows: 3, cols: 3 }, offset: { x: 1.23, y: 0.17 }, motif: { kind: 'dot', d: 1.3 } },
+      { id: 'lines', archetype: 'grid', params: { pitchX: 22.26, pitchY: 8.55, rowOffset: 0.5, rows: 3, cols: 3 }, offset: { x: -9.69, y: 0.07 }, motif: { kind: 'hline', length: 8.44 } },
     ],
   },
   {
@@ -86,16 +71,11 @@ export const PRESETS = [
     names: { ja: '湖沼堆積物' },
     provenance: {
       doc: 'R1', section: '2.7', measured: true,
-      notes: '氾濫原 (§2.5) と同じ部品で位相が逆 (phase 1) (§2.7)。px 10.55 = (点 21.09 と線 21.13 の平均) / 2 (§2.7)。py 8.5 は氾濫原と同じ (§2.7, §2.5)。線長 8.37 (8.31〜8.55 の平均, §2.7)。ro 0 (§2.7)。',
+      notes: '氾濫原 (§2.5) と同じ部品で点と線の位置が逆 (§2.7)。図形ごとに 2 層の千鳥格子 (ro 0.5、3 行 × 3 列)。px は同種間隔 (点 21.09、線 21.13, §2.7)。py: 点は河床の小点と座標まで同じ (§2.7) なので 8.55 (§2.3)、線は行 y 5.78, 14.21, 22.63 から 8.43 (§2.7)。線長 8.37 (8.31〜8.55 の平均, §2.7)。offset は原本 prim の中心座標に最小二乗で合わせた値: 点は 1 行目が 2 個なので半ピッチ左へ (-9.90, 0.07)、線 (0.56, 0)。線の間隔が 19.59〜22.43 と揺れる (§2.7) ので中心誤差が残る。',
     },
     layers: [
-      {
-        id: 'mixed', archetype: 'grid',
-        params: {
-          pitchX: 10.55, pitchY: 8.5, rowOffset: 0, rows: 3, assign: 'col', phase: 1,
-          cycle: [{ kind: 'dot', d: 1.3 }, { kind: 'hline', length: 8.37 }],
-        },
-      },
+      { id: 'dots', archetype: 'grid', params: { pitchX: 21.09, pitchY: 8.55, rowOffset: 0.5, rows: 3, cols: 3 }, offset: { x: -9.90, y: 0.07 }, motif: { kind: 'dot', d: 1.3 } },
+      { id: 'lines', archetype: 'grid', params: { pitchX: 21.13, pitchY: 8.43, rowOffset: 0.5, rows: 3, cols: 3 }, offset: { x: 0.56, y: 0 }, motif: { kind: 'hline', length: 8.37 } },
     ],
   },
   {
@@ -107,9 +87,9 @@ export const PRESETS = [
   {
     schema: 'zc-pattern/1.0.0', id: 'zc:100063000', table: '3-2', code: '100063000', symbol: 'Df',
     names: { ja: '土石流堆積物' },
-    provenance: { doc: 'R1', section: '2.9', measured: true, notes: '底辺 8.43 (8.31〜8.55 の平均)、高さ 4.17 (4.09〜4.33 の平均) (§2.9)。px 25.28 / py 7.10 / 千鳥 0.5 / 3 行 (§2.9)。白抜き (§2.9)。' },
+    provenance: { doc: 'R1', section: '2.9', measured: true, notes: '底辺 8.43 (8.31〜8.55 の平均)、高さ 4.17 (4.09〜4.33 の平均) (§2.9)。px 25.28 / py 7.10 / 千鳥 0.5 / 3 行 (§2.9)。白抜き (§2.9)。offset (7.02, -0.72) は 1 行目 cx = 9.73, 35.02、行 cy = 6.38, 13.48, 20.59 (§2.9) に中心配置の格子を合わせる量 (原本 prim で最小二乗)。' },
     layers: [
-      { id: 'debris', archetype: 'grid', params: { pitchX: 25.28, pitchY: 7.10, rowOffset: 0.5, rows: 3 }, motif: { kind: 'triangle', base: 8.43, height: 4.17, fill: 'paper' } },
+      { id: 'debris', archetype: 'grid', params: { pitchX: 25.28, pitchY: 7.10, rowOffset: 0.5, rows: 3 }, offset: { x: 7.02, y: -0.72 }, motif: { kind: 'triangle', base: 8.43, height: 4.17, fill: 'paper' } },
     ],
   },
   {
@@ -117,11 +97,12 @@ export const PRESETS = [
     names: { ja: '泥流堆積物' },
     provenance: {
       doc: 'R1', section: '2.10', measured: true,
-      notes: '点の層 px 9.66 / py 4.30 / 千鳥 0.5 / 6 行 (§2.10)。三角形の層 px 19.70 (点の 2.04 倍) / py 8.55 (7.71 と 9.39 の平均) / 千鳥 0.5 / 3 行、底辺 4.27 高さ 3.37 白抜き (§2.10)。三角形は点の格子の空き位置に置く (avoid, §2.10, 設計表 §1.5)。',
+      notes: '点の層 px 9.66 / py 4.30 / 千鳥 0.5 / 6 行 (§2.10)。三角形の層 px 19.70 (点の 2.04 倍) / py 8.55 (7.71 と 9.39 の平均) / 千鳥 0.5 / 3 行、底辺 4.27 高さ 3.37 白抜き (§2.10)。三角形は点の格子の空き位置に置く (avoid, §2.10, 設計表 §1.5)。点の offset (-0.42, -0.07) は原本 prim の中心座標に最小二乗で合わせた値。三角形の行間隔は 7.71 / 9.39 と不等 (行 y 2.89, 10.60, 19.99, §2.10) で、等間隔 8.55 の 1 層では中央の行に約 0.55 pt の誤差が出るため、1・3 行目 (py 17.10 = 7.71 + 9.39、2 行) と 2 行目 (同じ py で 1 行、半ピッチずらし) の 2 層に分けた。offset: 1・3 行目 (0, -2.77)、2 行目 (0.12, -3.61) (2 行目 cx 18.28, 37.98 を原本 prim で実測)。周期は両層とも 19.70 × 17.10。',
     },
     layers: [
-      { id: 'dots', archetype: 'grid', params: { pitchX: 9.66, pitchY: 4.30, rowOffset: 0.5, rows: 6 }, motif: { kind: 'dot', d: 1.3 } },
-      { id: 'triangles', archetype: 'grid', params: { pitchX: 19.70, pitchY: 8.55, rowOffset: 0.5, rows: 3, avoid: 'dots' }, motif: { kind: 'triangle', base: 4.27, height: 3.37, fill: 'paper' } },
+      { id: 'dots', archetype: 'grid', params: { pitchX: 9.66, pitchY: 4.30, rowOffset: 0.5, rows: 6 }, offset: { x: -0.42, y: -0.07 }, motif: { kind: 'dot', d: 1.3 } },
+      { id: 'trianglesOuter', archetype: 'grid', params: { pitchX: 19.70, pitchY: 17.10, rowOffset: 0, rows: 2, avoid: 'dots' }, offset: { x: 0, y: -2.77 }, motif: { kind: 'triangle', base: 4.27, height: 3.37, fill: 'paper' } },
+      { id: 'trianglesMiddle', archetype: 'grid', params: { pitchX: 19.70, pitchY: 17.10, rowOffset: 0, rows: 1, cols: 2, avoid: 'dots' }, offset: { x: 0.12, y: -3.61 }, motif: { kind: 'triangle', base: 4.27, height: 3.37, fill: 'paper' } },
     ],
   },
   {
@@ -133,9 +114,9 @@ export const PRESETS = [
   {
     schema: 'zc-pattern/1.0.0', id: 'zc:100000400', table: '3-2', code: '100000400', symbol: 'Tr',
     names: { ja: '段丘堆積物' },
-    provenance: { doc: 'R1', section: '2.12', measured: true, notes: '白丸の直径 7.0 (§2.12, 礫岩 §1.1 と同じ)。px 11.22 / py 9.27 / 千鳥なし (ro 0) / 3 行 (§2.12)。' },
+    provenance: { doc: 'R1', section: '2.12', measured: true, notes: '白丸の直径 7.0 (§2.12, 礫岩 §1.1 と同じ)。px 11.22 / py 9.27 / 千鳥なし (ro 0) / 3 行 (§2.12)。offset x 0.74 は cx = 6.29〜51.16 (§2.12) の中央が枠の中心より右にある量 (原本 prim で最小二乗)。' },
     layers: [
-      { id: 'terrace', archetype: 'grid', params: { pitchX: 11.22, pitchY: 9.27, rowOffset: 0, rows: 3 }, motif: { kind: 'circle', d: 7.0, fill: 'paper' } },
+      { id: 'terrace', archetype: 'grid', params: { pitchX: 11.22, pitchY: 9.27, rowOffset: 0, rows: 3 }, offset: { x: 0.74, y: 0 }, motif: { kind: 'circle', d: 7.0, fill: 'paper' } },
     ],
   },
   {

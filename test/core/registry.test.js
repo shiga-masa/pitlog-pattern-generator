@@ -80,7 +80,7 @@ test('list filters by table, archetype and text', () => {
 
 test('default registry loads every preset file and reports counts per file', () => {
   const { registry, report } = loadDefaultRegistry();
-  assert.equal(Object.keys(report.files).length, 12);
+  assert.equal(Object.keys(report.files).length, 13);
   assert.equal(report.total.failed, 0);
   assert.equal(registry.size, report.total.processed);
 });

@@ -42,16 +42,16 @@ const PATTERN_PRESETS = [
     code: '531100000',
     symbol: 'GF',
     names: { ja: '礫質土' },
-    origin: { x: 6.36, y: 5.01 },
+    origin: { x: 6.32, y: 4.94 },
     layers: [
       {
         id: 'gravels',
         archetype: 'grid',
-        params: { pitchX: 11.33, pitchY: 9.30, rowOffset: 0, rows: 3 },
-        motif: { kind: 'circle', d: 7.1, fill: 'paper' },
+        params: { pitchX: 11.31, pitchY: 9.37, rowOffset: 0, rows: 3 },
+        motif: { kind: 'circle', d: 7.0, fill: 'paper' },
       },
     ],
-    provenance: { doc: 'R3', section: '2 / t4_1_p053_h0_r02', measured: true, notes: 'x ピッチ 11.32–11.33 の報告値、千鳥なし' },
+    provenance: { doc: 'R3', section: '2 / t4_1_p053_h0_r02', measured: true, notes: '位置・ピッチ・径は原本 prim の外接矩形から実測(中心 x 6.36–51.57、行 y 4.94/14.31/23.69、外接 6.95–7.15 の平均 6.99)。千鳥なし。円は原本の 14 角形を真円で近似' },
   },
 
   // ---- 礫 G ---------------------------------------------------------------
@@ -62,16 +62,16 @@ const PATTERN_PRESETS = [
     code: '531111000',
     symbol: 'G',
     names: { ja: '礫' },
-    origin: { x: 7.35, y: 6.28 },
+    origin: { x: 7.35, y: 6.35 },
     layers: [
       {
         id: 'gravels',
         archetype: 'grid',
-        params: { pitchX: 21.66, pitchY: 8.03, rowOffset: { pt: 11.53 }, rows: 3 },
-        motif: { kind: 'circle', d: 7.1, fill: 'paper' },
+        params: { pitchX: 21.66, pitchY: 7.96, rowOffset: { pt: 11.12 }, rows: 3 },
+        motif: { kind: 'circle', d: 7.03, fill: 'paper' },
       },
     ],
-    provenance: { doc: 'R3', section: '2 / t4_1_p053_h0_r03', measured: true, notes: 'x ピッチ 22.46/20.86 は不等で平均 21.66。行 2 のオフセット 11.53 は pt で保持。手置きのずれ(0.2–0.4)は格子化' },
+    provenance: { doc: 'R3', section: '2 / t4_1_p053_h0_r03', measured: true, notes: 'x ピッチ 22.46/20.86 は不等で平均 21.66。行 y 6.35/14.31/22.27(prim 実測、ピッチ 7.96)。行 2 のオフセット 11.12 pt は中心誤差の平均を最小にする値。1 行目と 3 行目の x が 0.3 ずれる手置きは格子で再現できない(中心誤差 平均 0.32 が下限)。径は prim 外接の平均 7.03' },
   },
 
   // ---- 粗礫 CG = 礫 -------------------------------------------------------
@@ -94,16 +94,16 @@ const PATTERN_PRESETS = [
     code: '531111200',
     symbol: 'MG',
     names: { ja: '中礫' },
-    origin: { x: 8.43, y: 5.69 },
+    origin: { x: 8.45, y: 5.75 },
     layers: [
       {
         id: 'gravels',
         archetype: 'grid',
-        params: { pitchX: 16.95, pitchY: 8.62, rowOffset: 0.5, rows: 3 },
-        motif: { kind: 'circle', d: 5.7, fill: 'paper' },
+        params: { pitchX: 16.95, pitchY: 8.57, rowOffset: 0.5, rows: 3 },
+        motif: { kind: 'circle', d: 5.7, fill: 'paper', polygonSides: 12 },
       },
     ],
-    provenance: { doc: 'R3', section: '2 / t4_1_p053_h0_r05', measured: true, notes: 'x ピッチ 16.97/16.93 の平均 16.95' },
+    provenance: { doc: 'R3', section: '2 / t4_1_p053_h0_r05', measured: true, notes: 'x ピッチ 16.97/16.93 の平均 16.95。行 y 5.75/14.31/22.88(prim 実測、ピッチ 8.57)。原本は頂点が上下左右にある 12 角形(polygonSides 12)' },
   },
 
   // ---- 細礫 FG ------------------------------------------------------------
@@ -114,16 +114,16 @@ const PATTERN_PRESETS = [
     code: '531111300',
     symbol: 'FG',
     names: { ja: '細礫' },
-    origin: { x: 4.90, y: 5.00 },
+    origin: { x: 4.87, y: 4.94 },
     layers: [
       {
         id: 'gravels',
         archetype: 'grid',
-        params: { pitchX: 11.3, pitchY: 5.73, rowOffset: 0.5, rows: 4 },
-        motif: { kind: 'circle', d: 4.3, fill: 'paper' },
+        params: { pitchX: 11.33, pitchY: 5.78, rowOffset: { pt: 5.76 }, rows: 4 },
+        motif: { kind: 'circle', d: 4.19, fill: 'paper' },
       },
     ],
-    provenance: { doc: 'R3', section: '2 / t4_1_p053_h0_r06', measured: true, notes: 'y ピッチ 5.72/5.75/5.72 の平均 5.73' },
+    provenance: { doc: 'R3', section: '2 / t4_1_p053_h0_r06', measured: true, notes: 'prim 実測: 列ピッチ 11.33、行 y 4.94/10.78/16.43/22.27(平均ピッチ 5.78)、奇数行のずれ 5.76 pt、外接 4.15–4.23 の平均 4.19' },
   },
 
   // ---- 砂礫 GS ------------------------------------------------------------
@@ -134,25 +134,25 @@ const PATTERN_PRESETS = [
     code: '531120000',
     symbol: 'GS',
     names: { ja: '砂礫' },
-    origin: { x: 7.35, y: 6.28 },
+    origin: { x: 7.35, y: 6.35 },
     layers: [
       {
         id: 'gravels',
         archetype: 'grid',
-        params: { pitchX: 21.66, pitchY: 8.03, rowOffset: { pt: 11.53 }, rows: 3 },
-        motif: { kind: 'circle', d: 7.1, fill: 'paper' },
+        params: { pitchX: 21.66, pitchY: 7.96, rowOffset: { pt: 11.12 }, rows: 3 },
+        motif: { kind: 'circle', d: 7.03, fill: 'paper' },
       },
       {
         // Sand dots fill the gaps of the gravel lattice (R3 §2 砂礫: 7 dots).
         // Offset is measured from the spec origin (first gravel) to the first dot.
         id: 'sands',
         archetype: 'grid',
-        offset: { x: 10.97, y: -0.43 },
-        params: { pitchX: 21.66, pitchY: 8.57, rowOffset: 0.5, rows: 3 },
+        offset: { x: 10.87, y: -0.46 },
+        params: { pitchX: 21.40, pitchY: 8.57, rowOffset: { pt: -10.76 }, rows: 3 },
         motif: { kind: 'dot', d: 1.4 },
       },
     ],
-    provenance: { doc: 'R3', section: '2 / t4_1_p054_h0_r18', measured: false, notes: '点の位置は礫格子の隙間に置いた近似(x 誤差 約 0.5 pt、y ピッチ 8.66/8.47 の平均 8.57)。礫層は礫と同一' },
+    provenance: { doc: 'R3', section: '2 / t4_1_p054_h0_r18', measured: true, notes: '礫層は礫と同一。砂の点 7 個(2-3-2)は prim 実測の最小二乗格子(最初の点 (18.22, 5.89)、x ピッチ 21.40、中段のずれ -10.76 pt、y ピッチ 8.57)で、x 誤差は最大 約 0.5 pt' },
   },
 
   // ---- 砂質土 SF ----------------------------------------------------------
@@ -163,16 +163,16 @@ const PATTERN_PRESETS = [
     code: '531200000',
     symbol: 'SF',
     names: { ja: '砂質土' },
-    origin: { x: 4.21, y: 5.64 },
+    origin: { x: 4.23, y: 5.84 },
     layers: [
       {
         id: 'sands',
         archetype: 'grid',
-        params: { pitchX: 9.70, pitchY: 8.60, rowOffset: 0, rows: 3 },
+        params: { pitchX: 9.70, pitchY: 8.57, rowOffset: 0, rows: 3 },
         motif: { kind: 'dot', d: 1.4 },
       },
     ],
-    provenance: { doc: 'R3', section: '2 / t4_1_p054_h0_r45', measured: true, notes: 'x ピッチ平均 9.70、千鳥なし' },
+    provenance: { doc: 'R3', section: '2 / t4_1_p054_h0_r45', measured: true, notes: 'x ピッチ平均 9.70、千鳥なし。行 y は prim 実測で 5.64–5.85 が混在し、平均 5.84 を原点にした(ピッチ 8.57)' },
   },
 
   // ---- 砂 S ---------------------------------------------------------------
@@ -243,16 +243,16 @@ const PATTERN_PRESETS = [
     code: '531211300',
     symbol: 'FS',
     names: { ja: '細砂' },
-    origin: { x: 2.86, y: 2.82 },
+    origin: { x: 2.82, y: 2.82 },
     layers: [
       {
         id: 'sands',
         archetype: 'grid',
-        params: { pitchX: 11.3, pitchY: 5.75, rowOffset: 0.5, rows: 5 },
-        motif: { kind: 'dot', d: 0.75 },
+        params: { pitchX: 11.30, pitchY: 5.75, rowOffset: { pt: 5.69 }, rows: 5 },
+        motif: { kind: 'dot', d: 0.69 },
       },
     ],
-    provenance: { doc: 'R3', section: '2 / t4_1_p055_h0_r03', measured: true, notes: 'y ピッチ 5.75/5.74 の平均 5.75' },
+    provenance: { doc: 'R3', section: '2 / t4_1_p055_h0_r03', measured: true, notes: 'y ピッチ 5.75/5.74 の平均 5.75。奇数行のずれ 5.69 pt と点径 0.69(外接 0.60–0.81 の平均)は prim 実測' },
   },
 
   // ---- 粘性土 Cs ----------------------------------------------------------
@@ -263,16 +263,16 @@ const PATTERN_PRESETS = [
     code: '532100000',
     symbol: 'Cs',
     names: { ja: '粘性土' },
-    origin: { x: 4.77, y: 5.64 },
+    origin: { x: 9.04, y: 5.64 },
     layers: [
       {
         id: 'dashes',
         archetype: 'grid',
-        params: { pitchX: 12.78, pitchY: 8.67, rowOffset: { pt: 4.77 }, rows: 3, edgeMode: 'clip' },
+        params: { pitchX: 12.78, pitchY: 8.67, rowOffset: { pt: 4.77 }, rows: 3, cols: 4, edgeMode: 'clip' },
         motif: { kind: 'hline', length: 8.55 },
       },
     ],
-    provenance: { doc: 'R3', section: '2 / t4_1_p056_h0_r07', measured: true, notes: 'x ピッチ 12.92/12.51/12.92 の平均 12.78。行 2 のみ 4.77 pt ずれ。右端の 1 本は枠でクリップ' },
+    provenance: { doc: 'R3', section: '2 / t4_1_p056_h0_r07', measured: true, notes: 'x ピッチ 12.92/12.51/12.92 の平均 12.78。原点は最初の短線の中心(9.04, 5.64)。行 2 のみ 4.77 pt ずれ。各行 4 本、行 2 の右端の 1 本は枠でクリップ' },
   },
 
   // ---- シルト M -----------------------------------------------------------
@@ -283,16 +283,16 @@ const PATTERN_PRESETS = [
     code: '532110000',
     symbol: 'M',
     names: { ja: 'シルト' },
-    origin: { x: 4.77, y: 5.64 },
+    origin: { x: 9.04, y: 5.64 },
     layers: [
       {
         id: 'dashes',
         archetype: 'grid',
-        params: { pitchX: 12.78, pitchY: 8.67, rowOffset: 0, rows: 3 },
+        params: { pitchX: 12.78, pitchY: 8.67, rowOffset: 0, rows: 3, cols: 4 },
         motif: { kind: 'hline', length: 8.55 },
       },
     ],
-    provenance: { doc: 'R3', section: '2 / t4_1_p056_h0_r08', measured: true, notes: '粘性土と同じ短線、千鳥なし' },
+    provenance: { doc: 'R3', section: '2 / t4_1_p056_h0_r08', measured: true, notes: '粘性土と同じ短線、千鳥なし、各行 4 本。原点は最初の短線の中心(9.04, 5.64)' },
   },
 
   // ---- 粘土 C -------------------------------------------------------------
@@ -321,16 +321,16 @@ const PATTERN_PRESETS = [
     code: '532200000',
     symbol: 'O',
     names: { ja: '有機質土' },
-    origin: { x: 6.46, y: 5.75 },
+    origin: { x: 6.56, y: 5.75 },
     layers: [
       {
         id: 'pairs',
         archetype: 'grid',
-        params: { pitchX: 14.12, pitchY: 8.57, rowOffset: 0, rows: 3 },
-        motif: { kind: 'pairVline', length: 5.75, gap: 3.88 },
+        params: { pitchX: 14.11, pitchY: 8.57, rowOffset: 0, rows: 3 },
+        motif: { kind: 'pairVline', length: 5.78, gap: 3.97 },
       },
     ],
-    provenance: { doc: 'R3', section: '2 / t4_1_p056_h0_r34', measured: true, notes: '組内間隔 3.78–3.97 の平均 3.88。千鳥なし' },
+    provenance: { doc: 'R3', section: '2 / t4_1_p056_h0_r34', measured: true, notes: 'prim 実測: 線 x 4.57/8.35/18.68/22.65/…、組内間隔 3.97(最初の組だけ 3.78)、組ピッチ 14.11、線長 5.85/5.64 の平均 5.78。千鳥なし' },
   },
 
   // ---- 火山灰質粘性土 V ---------------------------------------------------
@@ -343,13 +343,20 @@ const PATTERN_PRESETS = [
     names: { ja: '火山灰質粘性土' },
     layers: [
       {
+        // Lines 1 and 3. The line spacing is unequal (7.66 + 8.57), so line 2 is its own layer.
         id: 'waves',
         archetype: 'wave',
+        offset: { x: 0, y: -0.55 },
+        params: { angle: 0, wavelength: 11.33, amplitude: 1.0, lineSpacing: 16.23, lines: 2, margin: 2.78, phase: 0.746 },
+      },
+      {
+        id: 'wavesMid',
+        archetype: 'wave',
         offset: { x: 0, y: -1.01 },
-        params: { angle: 0, wavelength: 11.33, amplitude: 1.0, lineSpacing: 8.17, lines: 3, margin: 2.78, phase: 0 },
+        params: { angle: 0, wavelength: 11.33, amplitude: 1.0, lineSpacing: 16.23, lines: 1, margin: 2.78, phase: 0.746 },
       },
     ],
-    provenance: { doc: 'R3', section: '2 / t4_1_p056_h0_r36', measured: true, notes: '行間は 7.66/8.67 の不等、平均 8.17。3 本の基線の平均位置に offset y -1.01。報告の 5 折れ線は正弦で近似' },
+    provenance: { doc: 'R3', section: '2 / t4_1_p056_h0_r36', measured: true, notes: '基線 y 5.64 / 13.30 / 21.87(prim 実測)。行間は 7.66/8.57 の不等なので 1・3 本目(間隔 16.23)と 2 本目を別層にした。位相 0.746 は枠中心から見た上向きの零交差(x 2.78, 14.11, …)の位置。報告の 5 折れ線は正弦で近似。原本は半波ごとの折れ線が端点で離れて 13 本の図形に分かれるため個数は一致しない' },
   },
 
   // ---- 高有機質土 Pt ------------------------------------------------------
@@ -560,16 +567,24 @@ const PATTERN_PRESETS = [
     code: '540130000',
     symbol: 'Pm',
     names: { ja: '軽石' },
-    origin: { x: 8.41, y: 6.36 },
+    origin: { x: 8.45, y: 6.35 },
     layers: [
       {
+        // Rows 1 and 3 (the row pitch is unequal, 7.96 + 9.17, so the middle row is its own layer).
         id: 'triangles',
         archetype: 'grid',
-        params: { pitchX: 19.80, pitchY: 8.57, rowOffset: { pt: 10.2 }, rows: 3 },
+        params: { pitchX: 19.77, pitchY: 17.13, rowOffset: 0, rows: 2 },
+        motif: { kind: 'triangle', base: 5.76, height: 4.54, fill: 'paper' },
+      },
+      {
+        id: 'trianglesMid',
+        archetype: 'grid',
+        offset: { x: 10.14, y: 7.96 },
+        params: { pitchX: 19.77, pitchY: 17.13, rowOffset: 0, rows: 1, cols: 2 },
         motif: { kind: 'triangle', base: 5.76, height: 4.54, fill: 'paper' },
       },
     ],
-    provenance: { doc: 'R3', section: '2 / t4_1_p057_h0_r12', measured: true, notes: 'y ピッチ 7.93/9.21 の平均 8.57(不等)。位置は外接の中心(重心 - h/6)。行 2 のオフセット 10.2 は pt' },
+    provenance: { doc: 'R3', section: '2 / t4_1_p057_h0_r12', measured: true, notes: '行 y 6.35/14.31/23.48(prim の外接中心、ピッチ 7.96/9.17 の不等)なので、1・3 行目と 2 行目を別層にした。x ピッチ 19.77、2 行目のずれ 10.14' },
   },
 
   // ---- しらす Si ----------------------------------------------------------

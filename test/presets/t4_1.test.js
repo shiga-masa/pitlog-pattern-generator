@@ -64,22 +64,22 @@ test('frame, ink and paper are left to the table defaults and colour rule', () =
   }
 });
 
-test('the gravel lattice has the reported pitch, diameter and 8 instances (3-2-3)', () => {
+test('the gravel lattice has the measured pitch, diameter and 8 instances (3-2-3)', () => {
   const g = byId.get('zc:531111000');
   const layer = g.layers[0];
   assert.equal(layer.params.pitchX, 21.66);
-  assert.equal(layer.params.pitchY, 8.03);
-  assert.deepEqual(layer.params.rowOffset, { pt: 11.53 });
-  assert.equal(layer.motif.d, 7.1);
+  assert.equal(layer.params.pitchY, 7.96);
+  assert.deepEqual(layer.params.rowOffset, { pt: 11.12 });
+  assert.equal(layer.motif.d, 7.03);
   assert.equal(layer.motif.fill, 'paper');
-  assert.deepEqual(g.origin, { x: 7.35, y: 6.28 });
+  assert.deepEqual(g.origin, { x: 7.35, y: 6.35 });
 });
 
 test('the sand-gravel preset has a gravel layer and a dot layer offset from it', () => {
   const p = byId.get('zc:531120000');
   assert.deepEqual(p.layers.map((l) => l.archetype), ['grid', 'grid']);
   assert.equal(p.layers[1].motif.kind, 'dot');
-  assert.equal(p.provenance.measured, false);
+  assert.equal(p.provenance.measured, true);
 });
 
 test('the decomposed-granite (まさ土) preset keeps the reported 7:6 direction split', () => {
@@ -98,11 +98,13 @@ test('the volcanic-ash preset records the unmeasured ±27 split as an assumption
   assert.match(p.provenance.notes, /未測定/);
 });
 
-test('the wave preset uses the mean line spacing 8.17 and no motif', () => {
+test('the wave preset splits the unequal line spacing into two wave layers with no motif', () => {
   const p = byId.get('zc:532300000');
-  assert.equal(p.layers[0].archetype, 'wave');
-  assert.equal(p.layers[0].params.lineSpacing, 8.17);
+  assert.deepEqual(p.layers.map((l) => l.archetype), ['wave', 'wave']);
+  assert.deepEqual(p.layers.map((l) => l.params.lines), [2, 1]);
+  assert.equal(p.layers[0].params.lineSpacing, 16.23);
   assert.equal(p.layers[0].motif, undefined);
+  assert.equal(p.layers[1].motif, undefined);
 });
 
 test('the Kanto loam preset flips every other row and uses the split chevron', () => {

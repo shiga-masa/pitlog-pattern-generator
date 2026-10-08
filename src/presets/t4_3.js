@@ -8,12 +8,15 @@
  * Table 4-3 has no 9-digit code: ids are zc:t4-3:<symbol>, a leading "-" marks 混じり.
  * The cell is the drawing area (56.52 x 28.30 pt, 0.239 pt lines, no frame): table default.
  * Diagonal bands run at atan(28.30 / 56.52) = 26.57 deg (angle: null = the table default).
+ * Positions (layer.offset, step, bandShift) were fitted to the motif centres of the extracted
+ * original cells (s01 prim, verified with codes/s02_verify_patterns.mjs in the analysis repo);
+ * the fitted values are stated in each provenance.notes ("prim 実測").
  */
 
 /** @type {import('../core/types.js').PatternSpec[]} */
 export const PRESETS = [
   {
-    // R3 §4 礫質: white small circles on 3 bands.
+    // R3 §4 礫質: white small circles on 3 bands (exact lattice: step (3u, -1.5u), band shift (u, -3u), u ~ 1.413 pt).
     schema: 'zc-pattern/1.0.0',
     id: 'zc:t4-3:G',
     table: '4-3',
@@ -22,41 +25,50 @@ export const PRESETS = [
     layers: [{
       id: 'circles',
       archetype: 'diagonalBand',
-      motif: { kind: 'circle', d: 2.83, fill: 'paper' },
-      params: { bands: 3, bandSpacing: 3.16, alongPitch: 4.74, bandPhase: 1 / 3 },
+      offset: { x: -1.41, y: 0 },
+      motif: { kind: 'circle', d: 2.82, fill: 'paper' },
+      params: { bands: 3, step: { x: 4.239, y: -2.122 }, bandShift: { x: 1.414, y: -4.245 } },
     }],
     provenance: {
       doc: 'R3',
       section: '4',
       measured: true,
-      notes: '礫質 (t4_3_p058_h0_r00): 36 個、径 2.83、帯 3 本 (n = -2.51, 0.65, 3.81)、帯間隔 3.16、帯方向ピッチ 4.74、隣の帯との位相差 1/3 ピッチ (1.58 pt)',
+      notes: '礫質 (t4_3_p058_h0_r00): 36 個、径 2.83 (外接 2.821-2.832)、帯 3 本 (n = -2.51, 0.65, 3.81)、帯間隔 3.16、帯方向ピッチ 4.74、隣の帯との位相差 1/3 ピッチ (1.58 pt)。prim 実測: 格子 step (4.2395, -2.1223)、帯間ベクトル (1.4133, -4.2446)、中央帯の円 (26.848, 14.150) (残差 0.003 以下)。径は 2.82 を採用: セル 56.524 に対し領域は 56.52 で、左端 (x 1.411) と右端 (x 55.113) の円を edgeMode whole で両方残すには r 1.41 が必要。同じ理由で step x 4.239、bandShift x 1.414、offset x -1.41 は実測範囲内で 13 ピッチの幅が 53.70 以下に収まる値を選んだ',
     },
   },
   {
-    // R3 §4 砂質: black dots on 3 bands.
-    // The band-to-band phase is not stated as a value in R3 (only "x が同じで y が 3.85 離れる"),
-    // so bandPhase is omitted (schema default 0) and the preset is flagged measured:false.
+    // R3 §4 砂質: black dots on 3 bands. The lowest band is not on the lattice of the upper two
+    // (prim: the upper two share x, y differs by 3.853; the lowest is offset along the band), so it is a second layer.
     schema: 'zc-pattern/1.0.0',
     id: 'zc:t4-3:S',
     table: '4-3',
     symbol: 'S',
     names: { ja: '砂質' },
-    layers: [{
-      id: 'dots',
-      archetype: 'diagonalBand',
-      motif: { kind: 'dot', d: 1.42 },
-      params: { bands: 3, bandSpacing: 3.5, alongPitch: 3.13 },
-    }],
+    layers: [
+      {
+        id: 'dots',
+        archetype: 'diagonalBand',
+        offset: { x: -0.706, y: -1.525 },
+        motif: { kind: 'dot', d: 1.42 },
+        params: { bands: 2, step: { x: 2.8264, y: -1.4022 }, bandShift: { x: 0, y: -3.853 } },
+      },
+      {
+        id: 'dotsLower',
+        archetype: 'diagonalBand',
+        offset: { x: 3.674, y: 2.215 },
+        motif: { kind: 'dot', d: 1.42 },
+        params: { bands: 1, step: { x: 2.8264, y: -1.4022 } },
+      },
+    ],
     provenance: {
       doc: 'R3',
       section: '4',
-      measured: false,
-      notes: '砂質 (t4_3_p058_h0_r01): 53 個、点径 1.42、帯 3 本 (n = -3.62, -0.01, 3.43)、間隔 約 3.5、帯方向ピッチ 3.07-3.17 (平均 3.13)。未測定: 帯間の位相 (隣の帯の点は x が同じで y が 3.85 離れる、と記載のみ。位相量への換算は要確認、bandPhase 省略)',
+      measured: true,
+      notes: '砂質 (t4_3_p058_h0_r01): 53 個、点径 1.42、帯 3 本 (n = -3.62, -0.01, 3.43、不等)、帯方向ピッチ 3.07-3.17 (平均 3.13)、隣の帯の点は x が同じで y が 3.85 離れる。prim 実測: 帯ごとの step (2.8263-2.8264, -1.3992 to -1.4051) の平均 (2.8264, -1.4022)。上 2 帯は bandShift (0, -3.853)、2 帯の中点 (27.554, 12.625)。下の帯は 2 層目、中心 (31.934, 16.365)。帯内に y 0.13-0.21 の段差 (手置き) が 1-2 か所あり、等ピッチでは表せない',
     },
   },
   {
-    // R3 §4 シルト質: short diagonal dashes parallel to the band, 3 bands, staggered.
-    // The stagger amount is not measured in R3 ("帯ごとに始点がずれ、千鳥になる"), so bandPhase is omitted.
+    // R3 §4 シルト質: short diagonal dashes parallel to the band, 3 bands, staggered (stagger from the prim).
     schema: 'zc-pattern/1.0.0',
     id: 'zc:t4-3:M',
     table: '4-3',
@@ -65,19 +77,21 @@ export const PRESETS = [
     layers: [{
       id: 'dashes',
       archetype: 'diagonalBand',
+      offset: { x: -1.243, y: 0.624 },
       motif: { kind: 'seg', length: 9.69 },
-      params: { bands: 3, bandSpacing: 2.53, alongPitch: 12.6, elementAngle: 'band' },
+      params: { bands: 3, step: { x: 11.329, y: -5.671 }, bandShift: { x: 1.241, y: 2.209 }, elementAngle: 'band' },
     }],
     provenance: {
       doc: 'R3',
       section: '4',
-      measured: false,
-      notes: 'シルト質 (t4_3_p058_h0_r02): 15 本、L 9.69 (端の切れた線 8.43, 4.88, 7.67)、角度 26.6 度 (帯に平行)、帯 3 本 (n = -2.52, 0.02, 2.55)、間隔 2.53、帯方向ピッチ 12.2-13.0 (平均 12.6)。未測定: 帯ごとの始点のずれ量 (千鳥の位相。bandPhase 省略)',
+      measured: true,
+      notes: 'シルト質 (t4_3_p058_h0_r02): 15 本、L 9.69 (端の切れた線 8.43, 4.88, 7.67)、角度 26.6 度 (帯に平行)、帯 3 本 (n = -2.52, 0.02, 2.55)、間隔 2.53、帯方向ピッチ 12.2-13.0 (平均 12.6)。prim 実測: 中央帯の線中心 (4.332,26.130), (15.559,20.510), (27.165,14.700), (38.552,8.999), (49.479,3.529) の最小二乗で step (11.329, -5.671)、中心 (27.017, 14.774)。隣の帯は中央帯から (1.356, 2.151) と (-1.126, -2.266) (千鳥。非対称なので平均 (1.241, 2.209) を bandShift に採用)。帯内の線間隔は不揃い (手置き)',
     },
   },
   {
     // R3 §4 粘土質: three continuous diagonal lines at 2.53 pt spacing (centre line through the cell centre).
     // Modelled as one full-length segment per band (L 63.22 = cell diagonal), clipped by the layer.
+    // bandShift is the centre of the clipped side line relative to the main line, so the visible parts coincide.
     schema: 'zc-pattern/1.0.0',
     id: 'zc:t4-3:C',
     table: '4-3',
@@ -87,13 +101,13 @@ export const PRESETS = [
       id: 'lines',
       archetype: 'diagonalBand',
       motif: { kind: 'seg', length: 63.22 },
-      params: { bands: 3, bandSpacing: 2.53, alongPitch: 63.22, elementAngle: 'band' },
+      params: { bands: 3, alongPitch: 63.22, bandShift: { x: 2.827, y: 1.412 }, elementAngle: 'band' },
     }],
     provenance: {
       doc: 'R3',
       section: '4',
       measured: true,
-      notes: '粘土質 (t4_3_p058_h0_r03): 3 本の実線。主線 (0,28.30)-(56.52,0)、副線 (0,25.47)-(50.87,0)、(5.65,28.30)-(56.52,2.82)。直交間隔 2.53。alongPitch は帯長 63.22 とし 1 本/帯として扱う (要確認)',
+      notes: '粘土質 (t4_3_p058_h0_r03): 3 本の実線。主線 (0,28.30)-(56.52,0)、副線 (0,25.47)-(50.87,0)、(5.65,28.30)-(56.52,2.82)。直交間隔 2.53。alongPitch は帯長 63.22 とし 1 本/帯として扱う。prim 実測: 副線の中心 (31.089, 15.563), (25.435, 12.733) は主線中心から ±(2.827, 1.412) (bandShift)',
     },
   },
   {
@@ -106,36 +120,46 @@ export const PRESETS = [
     layers: [{
       id: 'pairs',
       archetype: 'diagonalBand',
+      offset: { x: 1.903, y: 0.015 },
       motif: { kind: 'pairVline', length: 2.8, gap: 1.8 },
-      params: { bands: 2, step: { x: 5.65, y: -2.83 }, bandShift: { x: 2.83, y: 2.85 }, elementAngle: 0 },
+      params: { bands: 2, step: { x: 5.648, y: -2.824 }, bandShift: { x: 2.828, y: 2.83 }, elementAngle: 0, edgeMode: 'whole' },
     }],
     provenance: {
       doc: 'R3',
       section: '4',
       measured: true,
-      notes: '有機質 (t4_3_p058_h0_r04): 36 本 (18 組)、線長 2.64-2.93 (2.8)、組内間隔 1.76-1.91 (1.8)、帯方向の格子ベクトル (5.65, -2.83)、第 2 帯は (+2.83, +2.85) ずれる。帯間の法線方向間隔は bandShift が与えるため bandSpacing を省略 (要確認)',
+      notes: '有機質 (t4_3_p058_h0_r04): 36 本 (18 組)、線長 2.64-2.93 (2.8)、組内間隔 1.76-1.91 (1.8)、帯方向の格子ベクトル (5.65, -2.83)、第 2 帯は (+2.83, +2.85) ずれる。帯間の法線方向間隔は bandShift が与えるため bandSpacing を省略。prim 実測: 組の中心の step (5.648, -2.824)、第 2 帯へ (2.828, 2.83)、2 帯の中点 (30.163, 14.165)。端の組がセル辺に接するので edgeMode whole (clip ではセル外の組が加わる)',
     },
   },
   {
-    // R3 §4 火山灰質: "~" wave units on 3 bands.
-    // bandSpacing 5.06 is derived (not stated): the three band start points (R3 §4: (2.82,19.81), (5.08,24.34),
-    // (14.13,25.47)) projected on the band normal (0.447, 0.894) differ by 5.06 and 5.06.
+    // R3 §4 火山灰質: "~" wave units on 3 bands. The band shifts are unequal in the prim ((2.263, 4.529) and
+    // (1.977, 3.962) modulo the step), so the lowest band is a second layer.
     schema: 'zc-pattern/1.0.0',
     id: 'zc:t4-3:V',
     table: '4-3',
     symbol: 'V',
     names: { ja: '火山灰質' },
-    layers: [{
-      id: 'waves',
-      archetype: 'diagonalBand',
-      motif: { kind: 'waveUnit', halfWidth: 2.83, height: 1.03 },
-      params: { bands: 3, bandSpacing: 5.06, step: { x: 7.07, y: -2.83 }, elementAngle: 0 },
-    }],
+    layers: [
+      {
+        id: 'waves',
+        archetype: 'diagonalBand',
+        offset: { x: -0.282, y: -0.564 },
+        motif: { kind: 'waveUnit', halfWidth: 2.83, height: 2.06 },
+        params: { bands: 2, step: { x: 7.066, y: -2.83 }, bandShift: { x: 2.263, y: 4.529 }, elementAngle: 0, edgeMode: 'whole' },
+      },
+      {
+        id: 'wavesLower',
+        archetype: 'diagonalBand',
+        offset: { x: 2.827, y: 5.662 },
+        motif: { kind: 'waveUnit', halfWidth: 2.83, height: 2.06 },
+        params: { bands: 1, step: { x: 7.066, y: -2.83 }, elementAngle: 0, edgeMode: 'whole' },
+      },
+    ],
     provenance: {
       doc: 'R3',
       section: '4',
       measured: true,
-      notes: '火山灰質 (t4_3_p058_h0_r05): 20 単位 (40 区間)、半波の幅 2.83、実高 約 1.03、単位幅 5.65、単位間隔 (7.07, -2.83) (傾き 21.8 度、セル対角とは異なる)。bandSpacing 5.06 は帯起点 3 点の法線投影から算出 (報告の直接値ではない、要確認)',
+      notes: '火山灰質 (t4_3_p058_h0_r05): 20 単位 (40 区間)、半波の幅 2.83、制御点の高さ 1.38 (山・谷の実高 約 1.03、山から谷まで 2.06 = height)、単位幅 5.65、単位間隔 (7.07, -2.83) (傾き 21.8 度、セル対角とは異なる)。prim 実測: 単位中心の step (7.066, -2.83)。上 2 帯 (7+7 単位) は bandShift (2.263, 4.529)、中点 (27.978, 13.586)。下の帯 (6 単位) は 2 層目、中心 (31.087, 19.812)。報告の bandSpacing 5.06 は step の帯直交成分を含む値で、帯間は等間隔でない。端の単位がセル外へはみ出さないので edgeMode whole',
     },
   },
   {
@@ -148,14 +172,15 @@ export const PRESETS = [
     layers: [{
       id: 'ellipses',
       archetype: 'diagonalBand',
+      offset: { x: 0.633, y: -0.031 },
       motif: { kind: 'ellipse', w: 5.65, h: 2.83, fill: 'paper' },
-      params: { bands: 1, alongPitch: 6.7, elementAngle: 22.5 },
+      params: { bands: 1, step: { x: 6.075, y: -3.004 }, elementAngle: 22.5 },
     }],
     provenance: {
       doc: 'R3',
       section: '4',
       measured: true,
-      notes: '玉石混じり (t4_3_p058_h1_r00): 9 個、半軸 2.83 x 1.42 (径 5.65 x 2.83)、長軸 22.5-22.6 度、1 本の帯、帯方向ピッチ 6.48-6.90 (不等、設計書の値 6.7 を採用)',
+      notes: '玉石混じり (t4_3_p058_h1_r00): 9 個、半軸 2.83 x 1.42 (径 5.65 x 2.83)、長軸 22.5-22.6 度、1 本の帯、帯方向ピッチ 6.48-6.90 (不等)。prim 実測: 中心 9 点の最小二乗で step (6.075, -3.004)、中心 (28.893, 14.119)。残差 平均 0.20、最大 0.36 (手置きの不等ピッチ)',
     },
   },
   {
@@ -168,14 +193,15 @@ export const PRESETS = [
     layers: [{
       id: 'circles',
       archetype: 'diagonalBand',
+      offset: { x: -1.241, y: 0.82 },
       motif: { kind: 'circle', d: 3.11, fill: 'ink' },
-      params: { bands: 1, alongPitch: 6.2 },
+      params: { bands: 1, step: { x: 5.588, y: -2.682 } },
     }],
     provenance: {
       doc: 'R3',
       section: '4',
       measured: true,
-      notes: '礫混じり (t4_3_p058_h1_r01): 10 個、径 3.11、1 本の帯、ピッチ 5.85-6.52 (不等、平均 6.2)。最後の 1 個は帯から外れる (54.98, 1.48)',
+      notes: '礫混じり (t4_3_p058_h1_r01): 10 個、径 3.11、1 本の帯、ピッチ 5.85-6.52 (不等、平均 6.2)。最後の 1 個は帯から外れる (54.98, 1.48)。prim 実測: 右上の円を (54.96, 1.56) に固定した最小二乗で step (5.588, -2.682)、中心 (27.019, 14.970)。右上の円は原本でセル 56.534 の右辺まで達するので、領域 56.52 内に収まる位置へ 0.02 寄せた',
     },
   },
   {
@@ -247,14 +273,15 @@ export const PRESETS = [
     layers: [{
       id: 'pairs',
       archetype: 'diagonalBand',
+      offset: { x: 0.003, y: 0.021 },
       motif: { kind: 'pairVline', length: 2.8, gap: 1.8 },
-      params: { bands: 1, step: { x: 5.65, y: -2.75 }, elementAngle: 0 },
+      params: { bands: 1, step: { x: 5.648, y: -2.824 }, elementAngle: 0, edgeMode: 'whole' },
     }],
     provenance: {
       doc: 'R3',
       section: '4',
       measured: true,
-      notes: '腐植物混じり (t4_3_p058_h1_r05): 18 本 (9 組)、線長 2.64-2.92、組内間隔 1.76-1.91、帯方向の格子ベクトル (5.65, -2.75)',
+      notes: '腐植物混じり (t4_3_p058_h1_r05): 18 本 (9 組)、線長 2.64-2.92、組内間隔 1.76-1.91、帯方向の格子ベクトル (5.65, -2.75)。prim 実測: 組の中心の step (5.648, -2.824) (y の段差は -2.77 と -2.89 が混じり、平均 -2.824)、中心 (28.263, 14.171)。edgeMode whole (clip ではセル外の組が加わる)',
     },
   },
   {
@@ -267,14 +294,15 @@ export const PRESETS = [
     layers: [{
       id: 'waves',
       archetype: 'diagonalBand',
-      motif: { kind: 'waveUnit', halfWidth: 2.83, height: 1.03 },
-      params: { bands: 1, step: { x: 7.07, y: -3.68 }, elementAngle: 0 },
+      offset: { x: 3.539, y: -1.78 },
+      motif: { kind: 'waveUnit', halfWidth: 2.83, height: 2.06 },
+      params: { bands: 1, step: { x: 7.066, y: -3.557 }, elementAngle: 0, edgeMode: 'whole' },
     }],
     provenance: {
       doc: 'R3',
       section: '4',
       measured: true,
-      notes: '火山灰混じり (t4_3_p058_h1_r06): 8 単位 (16 区間)、半波の幅 2.83、実高 約 1.03。単位間隔 (7.07, -3.40) と (7.07, -3.96) が混じる (不等、平均 (7.07, -3.68))',
+      notes: '火山灰混じり (t4_3_p058_h1_r06): 8 単位 (16 区間)、半波の幅 2.83、実高 約 1.03 (山から谷まで 2.06 = height)。単位間隔 (7.07, -3.40) と (7.07, -3.96) が混じる (不等)。prim 実測: 7 間隔のうち 5 が -3.395、2 が -3.962 で、最小二乗の step (7.066, -3.557)、単位 4 の中心 (31.799, 12.370)。段差は手置きで等ピッチでは表せない',
     },
   },
   {

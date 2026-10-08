@@ -18,28 +18,34 @@ export const PRESETS = [
   {
     schema: 'zc-pattern/1.0.0', id: 'zc:221010400', table: '3-4', code: '221010400', symbol: 'Lp',
     names: { ja: '火山礫' },
+    origin: { x: 6.91, y: 5.12 },
     layers: [{
       id: 'triangles', archetype: 'grid',
       motif: { kind: 'triangle', base: 5.58, height: 4.58, fill: 'ink' },
       params: { pitchX: 14.07, pitchY: 5.70, rowOffset: 0.5, rows: 4 },
     }],
-    provenance: { doc: 'R2', section: '1', measured: true, notes: 'x ピッチ 14.00–14.13 の平均。行間 5.54–5.78 の平均(不等)' },
+    provenance: { doc: 'R2', section: '1', measured: true, notes: 'x ピッチ 14.00–14.13 の平均。行間 5.54–5.78 の平均(不等)。origin は 1 行目 1 列目の位置で、原本 prim(t3_4_p026_h1_r00)の三角形 bbox 中心を格子に最小二乗で当てた値(x: 各中心 − 14.07·列 − 千鳥 の平均、y: 行 cy 5.18 / 10.71 / 16.49 / 22.27 − 5.70·行 の平均)' },
   },
 
   {
     schema: 'zc-pattern/1.0.0', id: 'zc:221010500', table: '3-4', code: '221010500', symbol: 'Vbl',
     names: { ja: '火山岩塊' },
+    origin: { x: 8.31, y: 6.26 },
     layers: [{
       id: 'triangles', archetype: 'grid',
       motif: { kind: 'triangle', base: 8.43, height: 6.86, fill: 'ink' },
       params: { pitchX: 19.70, pitchY: 8.55, rowOffset: 0.5, rows: 3 },
     }],
-    provenance: { doc: 'R2', section: '2', measured: true },
+    provenance: {
+      doc: 'R2', section: '2', measured: true,
+      notes: 'origin は 1 行目 1 列目の位置で、原本 prim(t3_4_p026_h1_r01)の三角形 bbox 中心(行 cy 6.26 / 14.81 / 23.36、先頭 cx 8.31 / 18.16)を格子に最小二乗で当てた値',
+    },
   },
 
   {
     schema: 'zc-pattern/1.0.0', id: 'zc:221016500', table: '3-4', code: '221016500', symbol: 'Vbn',
     names: { ja: '火山弾' },
+    origin: { x: 8.33, y: 5.98 },
     layers: [{
       id: 'triangles', archetype: 'grid',
       motif: { kind: 'triangle', base: 5.58, height: 4.45, fill: 'ink' },
@@ -47,7 +53,7 @@ export const PRESETS = [
     }],
     provenance: {
       doc: 'R2', section: '3', measured: true,
-      notes: '高さ 4.33–4.58 の平均(中段 2 個は 4.33)。行間 8.07/9.03 の平均(不等)。千鳥 10.21 pt は 1/2 ピッチ 9.85 より 0.36 大きい',
+      notes: '高さ 4.33–4.58 の平均(中段 2 個は 4.33)。行間 8.07/9.03 の平均(不等)。千鳥 10.21 pt は 1/2 ピッチ 9.85 より 0.36 大きい。origin は 1 行目 1 列目の位置で、原本 prim(t3_4_p026_h1_r02)の三角形 bbox 中心(行 cy 6.14 / 14.21 / 23.24)を格子に最小二乗で当てた値。行間不等のため中段は 0.32 pt、上下段は 0.16 pt ずれる',
     },
   },
 
@@ -80,6 +86,7 @@ export const PRESETS = [
   {
     schema: 'zc-pattern/1.0.0', id: 'zc:210020600', table: '3-4', code: '210020600', symbol: 'Vb',
     names: { ja: '火山角礫岩' },
+    origin: { x: 6.83, y: 5.19 },
     layers: [{
       id: 'triangles', archetype: 'grid',
       motif: { kind: 'triangle', base: 5.52, height: 4.64, fill: 'ink' },
@@ -87,13 +94,14 @@ export const PRESETS = [
     }],
     provenance: {
       doc: 'R2', section: '5', measured: true,
-      notes: '原本枠 55.38×28.79 pt は既定枠へ正規化(設計書 §0.3、要確認)。x ピッチ 13.84–13.97 の平均',
+      notes: '原本枠 55.38×28.79 pt は既定枠へ正規化(設計書 §0.3、要確認)。x ピッチ 13.84–13.97 の平均。原本は 1 行目が 4 個・2 行目が 3 個(先頭 cx 6.81 / 13.85)。origin は 1 行目 1 列目の位置で、原本 prim(t3_4_p026_h1_r04)の三角形 bbox 中心(行 cy 5.25 / 10.86 / 16.71 / 22.57)を格子に最小二乗で当てた値(原本枠の左上基準、正規化前)',
     },
   },
 
   {
     schema: 'zc-pattern/1.0.0', id: 'zc:221020300', table: '3-4', code: '221020300', symbol: 'Tf',
     names: { ja: '凝灰岩' },
+    origin: { x: 6.21, y: 3.62 },
     layers: [{
       id: 'chevrons', archetype: 'grid',
       motif: { kind: 'splitChevron', legLength: 5.12, legAngle: 57.8, apexGap: 1.42, open: 'down' },
@@ -101,13 +109,14 @@ export const PRESETS = [
     }],
     provenance: {
       doc: 'R2', section: '9', measured: true,
-      notes: '脚長 5.06–5.19 の平均、脚角 56.7–58.9 の平均、頂部の隙間 1.42。脚の開き 6.88 は算出値と一致',
+      notes: '脚長 5.06–5.19 の平均、脚角 56.7–58.9 の平均、頂部の隙間 1.42。脚の開き 6.88 は算出値と一致。origin は 1 行目 1 列目の Λ の中心で、原本 prim(t3_4_p026_h1_r08)の左右の脚の中心の中点を格子に最小二乗で当てた値(x: 中点 6.23 / 20.30 / 34.36 / 48.43 と 13.29 / 27.30 / 41.31、y: 行 3.61 / 10.59 / 17.82 / 24.80)',
     },
   },
 
   {
     schema: 'zc-pattern/1.0.0', id: 'zc:221024300', table: '3-4', code: '221024300', symbol: 'Ptf',
     names: { ja: '軽石質凝灰岩' },
+    origin: { x: 6.21, y: 3.62 },
     layers: [
       {
         id: 'chevrons', archetype: 'grid',
@@ -115,20 +124,21 @@ export const PRESETS = [
         params: { pitchX: 14.07, pitchY: 7.06, rowOffset: 0.5, rows: 4 },
       },
       {
-        id: 'triangles', archetype: 'grid',
+        id: 'triangles', archetype: 'grid', offset: { x: 7.30, y: 1.34 },
         motif: { kind: 'triangle', base: 5.58, height: 4.58, fill: 'paper' },
-        params: { pitchX: 13.89, pitchY: 6.78, rowOffset: { pt: 7.24 }, rows: 4 },
+        params: { pitchX: 13.89, pitchY: 6.78, rowOffset: { pt: -7.24 }, rows: 4 },
       },
     ],
     provenance: {
       doc: 'R2', section: '10', measured: true,
-      notes: '三角形行の行間 7.10 / 7.58 / 5.42 は不等のため平均 6.78 で格子化。行内の段差 0.49 は再現しない。千鳥 7.24 は行先頭 x 13.41 と 6.17 の差',
+      notes: '三角形行の行間 7.10 / 7.58 / 5.42 は不等のため平均 6.78 で格子化。行内の段差 0.49 は再現しない。千鳥 −7.24 は行先頭 x 13.41(1 行目)と 6.17(2 行目)の差で、2 行目は左へずれる。origin は Λ 層の 1 行目 1 列目(凝灰岩と同じ)。三角形層の offset は、三角形の 1 行目 1 列目(x 13.51、y 4.96)と Λ 層の origin の差。三角形の位置は原本 prim(t3_4_p026_h1_r09 / r10)の bbox 中心を格子に最小二乗で当てた値(x: 中心 − 13.89·列 − 千鳥 の平均、y: 行 cy 4.54 / 11.80 / 19.38 / 24.80 − 6.78·行 の平均)。行間不等のため 3 行目は最大 0.86 pt ずれる',
     },
   },
 
   {
     schema: 'zc-pattern/1.0.0', id: 'zc:221025300', table: '3-4', code: '221025300', symbol: 'Stf',
     names: { ja: 'スコリア質凝灰岩' },
+    origin: { x: 6.21, y: 3.62 },
     layers: [
       {
         id: 'chevrons', archetype: 'grid',
@@ -136,33 +146,36 @@ export const PRESETS = [
         params: { pitchX: 14.07, pitchY: 7.06, rowOffset: 0.5, rows: 4 },
       },
       {
-        id: 'triangles', archetype: 'grid',
+        id: 'triangles', archetype: 'grid', offset: { x: 7.30, y: 1.34 },
         motif: { kind: 'triangle', base: 5.58, height: 4.58, fill: 'ink' },
-        params: { pitchX: 13.89, pitchY: 6.78, rowOffset: { pt: 7.24 }, rows: 4 },
+        params: { pitchX: 13.89, pitchY: 6.78, rowOffset: { pt: -7.24 }, rows: 4 },
       },
     ],
     provenance: {
       doc: 'R2', section: '11', measured: true,
-      notes: '三角形行の行間 7.10 / 7.58 / 5.42 は不等のため平均 6.78 で格子化。行内の段差 0.49 は再現しない。千鳥 7.24 は行先頭 x 13.41 と 6.17 の差',
+      notes: '三角形行の行間 7.10 / 7.58 / 5.42 は不等のため平均 6.78 で格子化。行内の段差 0.49 は再現しない。千鳥 −7.24 は行先頭 x 13.41(1 行目)と 6.17(2 行目)の差で、2 行目は左へずれる。origin は Λ 層の 1 行目 1 列目(凝灰岩と同じ)。三角形層の offset は、三角形の 1 行目 1 列目(x 13.51、y 4.96)と Λ 層の origin の差。三角形の位置は原本 prim(t3_4_p026_h1_r09 / r10)の bbox 中心を格子に最小二乗で当てた値(x: 中心 − 13.89·列 − 千鳥 の平均、y: 行 cy 4.54 / 11.80 / 19.38 / 24.80 − 6.78·行 の平均)。行間不等のため 3 行目は最大 0.86 pt ずれる',
     },
   },
 
   {
     schema: 'zc-pattern/1.0.0', id: 'zc:221030300', table: '3-4', code: '221030300', symbol: 'Wtf',
     names: { ja: '溶結凝灰岩' },
-    layers: [{
-      id: 'chevrons', archetype: 'grid',
-      params: {
-        pitchX: 7.03, pitchY: 8.55, rowOffset: 0, rows: 3, assign: 'col',
-        cycle: [
-          { kind: 'splitChevron', legLength: 5.0, legAngle: 33.7, apexGap: 1.32, open: 'left' },
-          { kind: 'splitChevron', legLength: 5.0, legAngle: 33.7, apexGap: 1.32, open: 'right' },
-        ],
+    origin: { x: 3.41, y: 6.38 },
+    layers: [
+      {
+        id: 'chevronsLeft', archetype: 'grid',
+        motif: { kind: 'splitChevron', legLength: 5.09, legAngle: 34.1, apexGap: 1.37, open: 'left' },
+        params: { pitchX: 14.06, pitchY: 8.55, rowOffset: 0, rows: 3 },
       },
-    }],
+      {
+        id: 'chevronsRight', archetype: 'grid', offset: { x: 7.03, y: 0 },
+        motif: { kind: 'splitChevron', legLength: 5.09, legAngle: 34.1, apexGap: 1.37, open: 'right' },
+        params: { pitchX: 14.06, pitchY: 8.55, rowOffset: 0, rows: 3 },
+      },
+    ],
     provenance: {
       doc: 'R2', section: '15', measured: true,
-      notes: '＞と＜を列ごとに交互。同じ向きの間隔 14.00–14.13 の半分を px に使用。脚角 31.8–35.6 の平均、隙間 1.20–1.44 の平均',
+      notes: '＞と＜を列ごとに交互し、全行で同じ並び(＞＜＞＜…、行ごとに入れ替わらない。原本 prim t3_4_p026_h1_r14 で確認)。grid の cycle の assign はどれも列だけでの交互を表せない(col は市松になる)ため、＞の層と＜の層に分け、＜の層を 7.03 pt(同じ向きの間隔の半分)右へずらす。各層の px 14.06 は 7.03 の 2 倍(同じ向きの間隔 14.00–14.13 の範囲内)。脚長 5.09・脚角 34.1 は原本 prim(t3_4_p026_h1_r14)の脚 48 本の平均(範囲 4.83–5.16、31.8–35.6 の中央値 5.0・33.7 では脚が短く IoU が 0.83 に留まった)。隙間 1.37 は 3 行の実測 1.20 / 1.45 / 1.45 の平均。origin は 1 行目 1 列目の山形の中心で、原本 prim(t3_4_p026_h1_r14)の上下の脚の中心(x 3.44 / 10.45 / … / 52.58、行 y 6.38 / 14.93 / 23.48)を格子に最小二乗で当てた値',
     },
   },
 
@@ -209,6 +222,7 @@ export const PRESETS = [
   {
     schema: 'zc-pattern/1.0.0', id: 'zc:221104410', table: '3-4', code: '221104410', symbol: 'Pfa',
     names: { ja: '軽石降下堆積物' },
+    origin: { x: 8.33, y: 5.98 },
     layers: [{
       id: 'triangles', archetype: 'grid',
       motif: { kind: 'triangle', base: 5.58, height: 4.45, fill: 'none' },
@@ -216,21 +230,22 @@ export const PRESETS = [
     }],
     provenance: {
       doc: 'R2', section: '19', measured: true,
-      notes: '輪郭のみ(塗りなし)。寸法・配置は火山弾(R2 §3)と同じ',
+      notes: '輪郭のみ(塗りなし)。寸法・配置・origin は火山弾(R2 §3)と同じ(原本 prim t3_4_p027_h0_r02 の中心座標は火山弾と一致)',
     },
   },
 
   {
     schema: 'zc-pattern/1.0.0', id: 'zc:240100010', table: '3-4', code: '240100010', symbol: 'Plv',
     names: { ja: 'パホイホイ溶岩' },
+    origin: { x: 16.77, y: 3.62 },
     layers: [{
       id: 'chevrons', archetype: 'grid',
       motif: { kind: 'chevron', width: 8.43, depth: 4.34, open: 'down' },
-      params: { pitchX: 22.49, pitchY: 7.06, rowOffset: 0.5, rows: 4 },
+      params: { pitchX: 22.49, pitchY: 7.06, rowOffset: -0.5, rows: 4 },
     }],
     provenance: {
       doc: 'R2', section: '25', measured: true,
-      notes: 'x ピッチ 22.43–22.55 の平均、行間 6.98–7.23 の平均(不等)。溶岩 7 種と模様なし溶岩の共通模様',
+      notes: 'x ピッチ 22.43–22.55 の平均、行間 6.98–7.23 の平均(不等)。溶岩 7 種と模様なし溶岩の共通模様。原本は 1 行目が 2 個(先頭 16.74)、2 行目が 3 個(先頭 5.58)なので、千鳥は −1/2(2 行目が左へずれる)。origin は 1 行目 1 列目の位置で、原本 prim(t3_4_p027_h0_r09)の山形 bbox 中心を格子に最小二乗で当てた値(y: 行 3.61 / 10.59 / 17.82 / 24.80 − 7.06·行 の平均)',
     },
   },
 

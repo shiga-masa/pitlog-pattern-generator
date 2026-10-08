@@ -63,28 +63,40 @@ export const PRESETS = [
   },
   {
     // R3 §3 崩積土: white (paper-filled) up-pointing triangles, 3-2-3 per row pattern, no visible frame,
-    // line width 0.239 pt (the other 4-2 rows use 0.2).
+    // line width 0.239 pt (the other 4-2 rows use 0.2). The rows are not equally spaced (bbox centres
+    // y 6.139 / 14.207 / 23.236 from the frame top) and the middle-row triangles are lower (4.335 vs 4.575),
+    // so the outer rows and the middle row are two grid layers (measured from prim t4_2_p057_h1_r03).
     schema: 'zc-pattern/1.0.0',
     id: 'zc:599200004',
     table: '4-2',
     code: '599200004',
     symbol: 'Dt',
     names: { ja: '崩積土' },
-    frame: { show: 'none' },
+    frame: { width: 56.02, height: 28.41, show: 'none' },
     stroke: { width: 0.239 },
     layers: [
       {
-        id: 'triangles',
+        // rows 1 and 3: x 8.309 / 28.013 / 47.716, y 6.139 and 23.236 (mean 14.688 = frame centre 14.207 + 0.481)
+        id: 'outerRows',
         archetype: 'grid',
-        motif: { kind: 'triangle', base: 5.58, height: 4.46, fill: 'paper' },
-        params: { pitchX: 19.70, pitchY: 8.55, rowOffset: { pt: 10.21 }, rows: 3 },
+        motif: { kind: 'triangle', base: 5.70, height: 4.575, fill: 'paper' },
+        params: { pitchX: 19.70, pitchY: 17.097, rows: 2, cols: 3 },
+        offset: { x: 0, y: 0.481 },
+      },
+      {
+        // row 2: apex x 18.517 / 38.221 (pitch 19.704, mean 28.369 = frame centre 28.013 + 0.357), y 14.207
+        id: 'middleRow',
+        archetype: 'grid',
+        motif: { kind: 'triangle', base: 5.58, height: 4.335, fill: 'paper' },
+        params: { pitchX: 19.704, pitchY: 17.097, rows: 1, cols: 2 },
+        offset: { x: 0.357, y: 0 },
       },
     ],
     provenance: {
       doc: 'R3',
       section: '3',
       measured: true,
-      notes: '崩積土 (t4_2_p057_h1_r03): 8 個 (3-2-3)。外接 5.46-5.70 x 4.34-4.58 の中央値 5.58 x 4.46。行中心 y 6.90 / 14.93 / 24.00 の間隔 8.03 と 9.07 は不等のため平均 8.55 を採る(不等)。pitchX 19.70 は行内の中心間隔、行 2 のずれ 10.21 pt。外枠は白線で不可視',
+      notes: '崩積土 (t4_2_p057_h1_r03): 8 個 (3-2-3)。枠 qu 56.02 x 28.41(白線で不可視)を枠寸法に採る。prim の外接中心(枠左上基準): 行 1 y 6.139・行 3 y 23.236(x 8.309 / 28.013 / 47.716、外接 5.70 x 4.575)、行 2 y 14.207(枠の中央、外接 5.696 / 5.460 x 4.335、頂点 x 18.517 / 38.221)。行間 8.068 と 9.030 が不等のため外側 2 行と中央行を別層にした(行 1-3 間 17.097)。報告の重心 y 6.90 / 14.93 / 24.00 は三角形の重心で、外接中心とは h/6 違う',
     },
   },
   {

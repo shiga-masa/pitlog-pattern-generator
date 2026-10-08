@@ -9,6 +9,7 @@ import { PRESETS as t3_2 } from './t3_2.js';
 import { PRESETS as t3_3 } from './t3_3.js';
 import { PRESETS as t3_4 } from './t3_4.js';
 import { PRESETS as t3_5 } from './t3_5.js';
+import { PRESETS as t3_6 } from './t3_6.js';
 import { PRESETS as t3_7 } from './t3_7.js';
 import { PRESETS as t3_8 } from './t3_8.js';
 import { PRESETS as t3_9 } from './t3_9.js';
@@ -19,7 +20,7 @@ import { PRESETS as t5 } from './t5.js';
 
 export const PRESET_FILES = Object.freeze({
   'presets/t3_1.js': t3_1, 'presets/t3_2.js': t3_2, 'presets/t3_3.js': t3_3, 'presets/t3_4.js': t3_4,
-  'presets/t3_5.js': t3_5, 'presets/t3_7.js': t3_7, 'presets/t3_8.js': t3_8, 'presets/t3_9.js': t3_9,
+  'presets/t3_5.js': t3_5, 'presets/t3_6.js': t3_6, 'presets/t3_7.js': t3_7, 'presets/t3_8.js': t3_8, 'presets/t3_9.js': t3_9,
   'presets/t4_1.js': t4_1, 'presets/t4_2.js': t4_2, 'presets/t4_3.js': t4_3, 'presets/t5.js': t5,
 });
 

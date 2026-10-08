@@ -55,13 +55,17 @@ test('崩積土 has 0.239 pt lines, no frame, and the measured triangle size', (
   const p = byId(T4_2).get('zc:599200004');
   assert.equal(p.stroke.width, 0.239);
   assert.equal(p.frame.show, 'none');
-  const g = p.layers[0];
-  assert.equal(g.motif.kind, 'triangle');
-  assert.equal(g.motif.fill, 'paper');
-  assert.equal(g.motif.base, 5.58);
-  assert.equal(g.motif.height, 4.46);
-  assert.equal(g.params.pitchX, 19.70);
-  assert.deepEqual(g.params.rowOffset, { pt: 10.21 });
+  assert.deepEqual([p.frame.width, p.frame.height], [56.02, 28.41]);
+  const [outer, middle] = p.layers;
+  for (const g of [outer, middle]) {
+    assert.equal(g.motif.kind, 'triangle');
+    assert.equal(g.motif.fill, 'paper');
+  }
+  assert.deepEqual([outer.motif.base, outer.motif.height], [5.70, 4.575]);
+  assert.deepEqual([middle.motif.base, middle.motif.height], [5.58, 4.335]);
+  assert.deepEqual([outer.params.rows, outer.params.cols, middle.params.rows, middle.params.cols], [2, 3, 1, 2]);
+  assert.equal(outer.params.pitchX, 19.70);
+  assert.equal(outer.params.pitchY, 17.097);
 });
 
 test('t4_3 has 15 presets: 14 drawn and サンゴ混じり empty', () => {
@@ -84,11 +88,13 @@ test('every t4_3 spec passes validateSpec', () => {
   }
 });
 
-test('t4_3 unmeasured phases are flagged measured:false and carry no invented value', () => {
+test('t4_3 band phases measured from the prim are given as bandShift, never as an invented bandPhase', () => {
   const m = byId(T4_3);
   for (const id of ['zc:t4-3:S', 'zc:t4-3:M']) {
-    assert.equal(m.get(id).provenance.measured, false, id);
+    assert.equal(m.get(id).provenance.measured, true, id);
     assert.equal('bandPhase' in m.get(id).layers[0].params, false, id);
+    assert.ok(m.get(id).layers[0].params.bandShift, id);
+    assert.match(m.get(id).provenance.notes, /prim 実測/, id);
   }
 });
 

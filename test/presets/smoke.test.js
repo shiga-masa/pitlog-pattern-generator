@@ -22,13 +22,7 @@ import { pixelSize, withinPixelLimits } from '../../src/render/png.js';
  * verification stage. Each must fail with exactly this GeometryError, so a fix shows up as a test failure
  * here (remove the entry then).
  */
-const KNOWN_VALUE_ISSUES = {
-  // R1 §1.3: blob irregularity (and rotation) are unmeasured -> null; the motif refuses to invent them.
-  'zc:111102002': /irregularity is unmeasured/,
-  // R2 §35: the preset gives amplitude 2.89 (the report's crest-to-trough "振幅 2.89"), but wave.amplitude is
-  // the HALF crest-to-trough height (CONVENTIONS §8.1 PARAMS of wave.js), so rampDy 2.89 != 2 x 2.89.
-  'zc:312020000': /rampDy 2\.89 must equal 2 x amplitude/,
-};
+const KNOWN_VALUE_ISSUES = {};
 
 const HEX = /#[0-9a-fA-F]{6}\b/g;
 

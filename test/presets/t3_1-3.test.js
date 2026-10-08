@@ -89,12 +89,14 @@ test('only the breccia (角礫岩) and wacke (ワッケ) are flagged as partly u
   assert.deepEqual(unmeasured, ['zc:111102002', 'zc:114200002']);
 });
 
-test('a preset with an unmeasured blob value keeps null, not a made-up number', () => {
+test('the breccia blob values measured from the source prim are documented in provenance', () => {
   const breccia = T3_1.find((s) => s.id === 'zc:111102002');
   const blobs = breccia.layers[0].params.cycle;
   assert.equal(blobs.length, 2);
   for (const b of blobs) {
-    assert.equal(b.irregularity, null);
-    assert.equal(b.rotation, null);
+    assert.equal(typeof b.irregularity, 'number');
+    assert.equal(typeof b.rotation, 'number');
   }
+  assert.match(breccia.provenance.notes, /irregularity 0\.3/);
+  assert.match(breccia.provenance.notes, /rotation/);
 });

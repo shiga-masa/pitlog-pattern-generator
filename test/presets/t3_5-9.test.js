@@ -107,11 +107,11 @@ test('表3-5 patterns use the wave, hatch, grid and brick archetypes', () => {
   for (const k of ['wave', 'hatch', 'grid', 'brick']) assert.ok(kinds.has(k), `missing archetype ${k}`);
 });
 
-test('片麻岩 lineSpacing 9.72 is the horizontal intercept 13.75 converted by sin 45 degrees', () => {
+test('片麻岩 lineSpacing 9.70 is the mean distance of the 5 fitted base lines (-19.35 ... 19.47)', () => {
   const s = T35.find((x) => x.id === 'zc:311020000');
-  const expected = Math.round(13.75 * Math.sin(Math.PI / 4) * 100) / 100;
+  const expected = meanGap2([-19.348, -9.718, -0.009, 9.700, 19.467]);
   assert.equal(s.layers[0].params.lineSpacing, expected);
-  assert.equal(expected, 9.72);
+  assert.equal(expected, 9.70);
 });
 
 test('粘板岩 hatch spacing equals the mean of the 5 measured row gaps (4.24)', () => {
