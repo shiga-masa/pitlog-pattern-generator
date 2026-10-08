@@ -1,5 +1,6 @@
 /**
- * Export panel (CONTRACT 4.4, design 5.6, 5.7): unit, size, dpi, format; downloads SVG or PNG.
+ * Export panel (CONTRACT 4.4, design 5.6, 5.7): unit, size, dpi, and one download button each
+ * for SVG and PNG (the button decides the format; output.format is not edited here).
  * Owner: app-3. Colours: only --earth and --white in the UI (CONVENTIONS 12).
  * A PNG request over the pixel limit is refused with the reason and candidate values (CONVENTIONS 9).
  */
@@ -10,9 +11,7 @@ import { LIMITS } from '../../../src/core/defaults.js';
 import { buildRenderOptions } from '../state.js';
 
 const UNITS = ['mm', 'pt', 'px'];
-const FORMATS = ['svg', 'png'];
 const UNIT_LABEL = { mm: 'mm', pt: 'pt', px: 'px' };
-const FORMAT_LABEL = { svg: 'SVG(ベクタ)', png: 'PNG(ラスタ)' };
 const PT_PER_INCH = 72;
 
 /**
@@ -36,22 +35,19 @@ export function mountExportPanel(container, props) {
   const widthField = numberField('幅');
   const heightField = numberField('高さ');
   const dpiField = numberField('解像度 (dpi)');
-  const formatField = selectField('形式', FORMATS, FORMAT_LABEL);
-  grid.append(unitField.wrap, widthField.wrap, heightField.wrap, dpiField.wrap, formatField.wrap);
+  grid.append(unitField.wrap, widthField.wrap, heightField.wrap, dpiField.wrap);
 
   const hint = el('p', 'margin:0;font-size:14px;color:var(--earth);');
   const problems = el('ul', 'margin:0;padding:0 0 0 1.2em;font-size:14px;color:var(--earth);');
   const result = el('p', 'margin:0;font-size:14px;font-weight:700;color:var(--earth);');
 
-  const exportBtn = document.createElement('button');
-  exportBtn.type = 'button';
-  exportBtn.textContent = '書き出す';
-  exportBtn.style.cssText = 'font-size:16px;font-weight:700;color:var(--white);background:var(--earth);border:1px solid var(--earth);border-radius:0;padding:10px 16px;min-height:44px;cursor:pointer;box-shadow:none;align-self:flex-start;';
+  const buttons = el('div', 'display:flex;flex-wrap:wrap;gap:8px;');
+  const exportBtns = { svg: downloadButton('SVG をダウンロード'), png: downloadButton('PNG をダウンロード') };
+  buttons.append(exportBtns.svg, exportBtns.png);
 
-  container.append(grid, hint, problems, exportBtn, result);
+  container.append(grid, hint, problems, buttons, result);
 
   unitField.input.addEventListener('change', () => onUnitChange(unitField.input.value));
-  formatField.input.addEventListener('change', () => onOutputChange({ format: formatField.input.value }));
   widthField.input.addEventListener('change', () => onSizeInput('width', widthField));
   heightField.input.addEventListener('change', () => onSizeInput('height', heightField));
   dpiField.input.addEventListener('change', () => {
@@ -63,7 +59,8 @@ export function mountExportPanel(container, props) {
     setProblems([]);
     onOutputChange({ dpi: v });
   });
-  exportBtn.addEventListener('click', () => { runExport(); });
+  exportBtns.svg.addEventListener('click', () => { runExport('svg'); });
+  exportBtns.png.addEventListener('click', () => { runExport('png'); });
 
   /**
    * Frame of the current preset in pt, or null when no preset is selected. The frame is optional in
@@ -138,7 +135,6 @@ export function mountExportPanel(container, props) {
   function refreshView(s) {
     const out = s.output;
     setIfIdle(unitField.input, out.unit);
-    setIfIdle(formatField.input, out.format);
     setIfIdle(dpiField.input, String(out.dpi));
 
     const frame = presetFramePt(s.presetId);
@@ -153,13 +149,9 @@ export function mountExportPanel(container, props) {
       hint.textContent = 'プリセットを選ぶと書き出せます';
       return;
     }
-    if (out.format === 'png') {
-      const { wpt, hpt } = effectiveSizePt(s);
-      const pc = pixelCheck(wpt, hpt, out.dpi);
-      hint.textContent = `画素: ${pc.pw} × ${pc.ph} px(1 辺の上限 ${LIMITS.maxSidePx} px、総画素の上限 ${LIMITS.maxPixels.toExponential(0)})`;
-    } else {
-      hint.textContent = 'SVG はベクタのため画素の上限はありません。';
-    }
+    const { wpt, hpt } = effectiveSizePt(s);
+    const pc = pixelCheck(wpt, hpt, out.dpi);
+    hint.textContent = `PNG の画素: ${pc.pw} × ${pc.ph} px(1 辺の上限 ${LIMITS.maxSidePx} px、総画素の上限 ${LIMITS.maxPixels.toExponential(0)})。SVG はベクタのため画素の上限はありません。`;
   }
 
   function setIfIdle(input, value) {
@@ -167,7 +159,7 @@ export function mountExportPanel(container, props) {
     if (input.value !== value) input.value = value;
   }
 
-  async function runExport() {
+  async function runExport(format) {
     if (busy) return;
     result.textContent = '';
     const s = latest;
@@ -177,7 +169,7 @@ export function mountExportPanel(container, props) {
     }
     const out = s.output;
     const { wpt, hpt } = effectiveSizePt(s);
-    if (out.format === 'png') {
+    if (format === 'png') {
       const pc = pixelCheck(wpt, hpt, out.dpi);
       if (pc.over.length > 0) {
         setProblems(pc.over.concat([
@@ -203,12 +195,13 @@ export function mountExportPanel(container, props) {
       return;
     }
     busy = true;
-    exportBtn.disabled = true;
+    exportBtns.svg.disabled = true;
+    exportBtns.png.disabled = true;
     result.textContent = '書き出し中…';
     try {
-      const name = fileName(s, roundN(sizeW), roundN(sizeH));
+      const name = fileName(s, roundN(sizeW), roundN(sizeH), format);
       let blob;
-      if (out.format === 'svg') {
+      if (format === 'svg') {
         const { svg, meta } = await renderSVG(s.presetId, options);
         setProblems((meta.warnings ?? []).map(String));
         blob = new Blob([svg], { type: 'image/svg+xml' });
@@ -221,15 +214,16 @@ export function mountExportPanel(container, props) {
       result.textContent = `書き出せません: ${err.name}: ${err.message}`;
     } finally {
       busy = false;
-      exportBtn.disabled = false;
+      exportBtns.svg.disabled = false;
+      exportBtns.png.disabled = false;
     }
   }
 
   /** `<id>_<density>_<w>x<h><unit>_<dpi>dpi.<ext>`; characters other than [A-Za-z0-9._-] become "_". */
-  function fileName(s, w, h) {
+  function fileName(s, w, h, format) {
     const safe = (v) => String(v).replace(/[^A-Za-z0-9._-]/g, '_');
     const density = s.options.density ?? 1;
-    return `${safe(s.presetId)}_${safe(density)}_${safe(fmtNum(w))}x${safe(fmtNum(h))}${s.output.unit}_${safe(s.output.dpi)}dpi.${s.output.format}`;
+    return `${safe(s.presetId)}_${safe(density)}_${safe(fmtNum(w))}x${safe(fmtNum(h))}${s.output.unit}_${safe(s.output.dpi)}dpi.${format}`;
   }
 
   function update(state) {
@@ -293,6 +287,14 @@ function labelWrap(text) {
 }
 
 const CONTROL_STYLE = 'font-size:16px;font-weight:400;color:var(--earth);background:var(--white);border:1px solid var(--earth);border-radius:0;padding:8px;min-height:44px;box-sizing:border-box;width:100%;';
+
+function downloadButton(label) {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.textContent = label;
+  b.style.cssText = 'font-size:16px;font-weight:700;color:var(--white);background:var(--earth);border:1px solid var(--earth);border-radius:0;padding:10px 16px;min-height:44px;cursor:pointer;box-shadow:none;flex:1 1 180px;';
+  return b;
+}
 
 function numberField(text) {
   const wrap = labelWrap(text);

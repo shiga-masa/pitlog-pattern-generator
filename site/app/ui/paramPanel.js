@@ -587,7 +587,7 @@ export function mountParamPanel(container, props = {}) {
         sections.push(sec);
       });
     } else {
-      sections.push(el('p', 'pp-unsupported', '左の一覧からプリセットを選ぶと、ここに型とモチーフの入力欄が出ます。'));
+      sections.push(el('p', 'pp-unsupported', '一覧から模様を選ぶと、ここに型とモチーフの入力欄が出ます。'));
     }
     root.replaceChildren(...sections);
     for (const s of syncers) s();

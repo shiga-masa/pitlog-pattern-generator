@@ -1,0 +1,200 @@
+/*
+ * Catalogue styles (site/app/ui/catalog.js).
+ * Two colours only (--earth, --white), solid rules, no radius, shadow, opacity or italics.
+ * A selected tile is shown by a thicker rule and the name in inverted colours.
+ * Works at 360 px: the grid wraps to three columns, nothing is wider than the page.
+ */
+
+.cat {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.cat-label {
+  font-weight: 700;
+  font-size: 0.875rem;
+  display: grid;
+  gap: 6px;
+}
+
+.cat-search {
+  width: 100%;
+  font-size: 1rem;
+  padding: 8px 10px;
+}
+
+.cat-count {
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.cat-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+  min-width: 0;
+}
+
+.cat-cell {
+  min-width: 0;
+  display: flex;
+}
+
+.cat-tile {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 1px solid var(--earth);
+  background: var(--white);
+  color: var(--earth);
+  font-weight: 400;
+  text-align: left;
+}
+
+.cat-tile:hover {
+  background: var(--white);
+  color: var(--earth);
+  outline: 2px solid var(--earth);
+  outline-offset: -2px;
+}
+
+.cat-thumb {
+  display: block;
+  width: 100%;
+  aspect-ratio: 2 / 1;
+  background: var(--white);
+  border-bottom: 1px solid var(--earth);
+  overflow: hidden;
+}
+
+.cat-thumb svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+}
+
+.cat-thumb-error {
+  display: block;
+  padding: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.cat-name {
+  display: block;
+  padding: 4px 6px;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.cat-tile[aria-pressed="true"] {
+  outline: 3px solid var(--earth);
+  outline-offset: -3px;
+}
+
+.cat-tile[aria-pressed="true"] .cat-name {
+  background: var(--earth);
+  color: var(--white);
+}
+
+.cat-empty,
+.cat-error {
+  font-weight: 700;
+  font-size: 0.9375rem;
+  overflow-wrap: anywhere;
+}
+
+.cat-grid[hidden],
+.cat-empty[hidden],
+.cat-error[hidden] {
+  display: none;
+}
+
+@media (max-width: 479px) {
+  .cat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  /* style.css makes buttons full width on phones; tiles already fill their cell */
+  .cat-tile {
+    width: 100%;
+  }
+}
+
+/* ---------- detail area below the catalogue ---------- */
+
+.detail-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px 16px;
+  border-bottom: 2px solid var(--earth);
+  padding-bottom: 8px;
+  margin-bottom: 16px;
+  min-width: 0;
+}
+
+.detail-title {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.detail-title h2 {
+  margin-bottom: 4px;
+}
+
+.detail-meta {
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+}
+
+.detail-back {
+  font-size: 0.875rem;
+  padding: 4px 10px;
+  width: auto;
+}
+
+.detail-body {
+  display: grid;
+  gap: 24px;
+  min-width: 0;
+}
+
+.settings {
+  border-top: 1px solid var(--earth);
+  border-bottom: 1px solid var(--earth);
+  min-width: 0;
+}
+
+.settings > summary {
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 1.0625rem;
+  padding: 12px 0;
+  list-style-position: inside;
+}
+
+.settings[open] > summary {
+  border-bottom: 1px solid var(--earth);
+}
+
+.settings-body {
+  display: grid;
+  gap: 24px;
+  padding: 16px 0;
+  min-width: 0;
+}
+
+.detail[hidden] {
+  display: none;
+}

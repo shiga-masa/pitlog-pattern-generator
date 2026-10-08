@@ -13,6 +13,7 @@ const PT_PER_CSS_PX = 0.75; // 96 dpi screen
 const ZOOM_STEPS = [0.5, 1, 1.5, 2, 3, 4];
 const TILE_COLS = 3;
 const TILE_ROWS = 2;
+const INITIAL_ZOOM = 3; // detail area shows a large preview; the 10 mm bar follows the zoom
 
 /**
  * @param {HTMLElement} container
@@ -23,7 +24,7 @@ export function mountPreview(container, props) {
   if (!(container instanceof HTMLElement)) throw new TypeError('mountPreview: container must be an HTMLElement');
 
   // Display settings of this pane only (not application state).
-  const ui = { view: 'single', zoom: 1, boundary: true };
+  const ui = { view: 'single', zoom: INITIAL_ZOOM, boundary: true };
 
   let latest = props?.state ?? null;
   let lastKey = null;
@@ -187,7 +188,7 @@ export function mountPreview(container, props) {
 
   markPressed(viewBtns.single, true);
   markPressed(viewBtns.tile, false);
-  setZoom(1);
+  setZoom(INITIAL_ZOOM);
   update(latest);
 
   return { update, destroy };
@@ -208,7 +209,7 @@ function button(label) {
   const b = document.createElement('button');
   b.type = 'button';
   b.textContent = label;
-  b.style.cssText = 'font-size:16px;font-weight:700;color:var(--earth);background:var(--white);border:1px solid var(--earth);border-radius:0;padding:6px 12px;min-height:44px;min-width:44px;cursor:pointer;box-shadow:none;';
+  b.style.cssText = 'font-size:16px;font-weight:700;color:var(--earth);background:var(--white);border:1px solid var(--earth);border-radius:0;padding:6px 12px;min-height:44px;min-width:44px;width:auto;cursor:pointer;box-shadow:none;';
   return b;
 }
 

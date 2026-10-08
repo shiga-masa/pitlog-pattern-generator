@@ -1,6 +1,6 @@
 # site/app 契約書(app-1 が作成・固定)
 
-このファイルは site/app の唯一の契約文書。担当 app-2(presetPicker.js, paramPanel.js)と app-3(preview.js, exportPanel.js)は着手時にこれを読み、ここに書かれた名前・引数・戻り値だけに依存する。契約を変えるときは app-1 に報告し、このファイルを更新してから各担当が合わせる。
+このファイルは site/app の唯一の契約文書。担当 app-2(catalog.js, paramPanel.js)と app-3(preview.js, exportPanel.js)は着手時にこれを読み、ここに書かれた名前・引数・戻り値だけに依存する。契約を変えるときは app-1 に報告し、このファイルを更新してから各担当が合わせる。
 
 前提: `docs/CONVENTIONS.md` §12(デザイン)、§5(色)、§9(エラー方針)に従う。
 
@@ -28,7 +28,7 @@ State = {
     width: number | null,                   // 既定 null = プリセット枠
     height: number | null,                  // 既定 null = プリセット枠
     dpi: number,                            // 既定 300(px 単位と PNG で使う)
-    format: 'svg' | 'png',                  // 既定 'svg'
+    format: 'svg' | 'png',                  // 既定 'svg'。URL の fmt と往復するだけで、画面では編集しない(書き出し形式はボタンで決まる §4.4)
   },
 }
 ```
@@ -81,12 +81,16 @@ state.js の export:
 ## 2. アプリの組み立て(site/app/main.js)
 
 - `site/index.html` → `<script type="module" src="./app/main.js">`。
-- main.js がレイアウト DOM を作り、各モジュールを mount する。DOM の骨組み(id):
-  - `#warnings` 警告の一覧(decodeShareQuery の警告、resolveId の失敗、上限超過など)
-  - `#preset-picker` → `mountPresetPicker`
-  - `#param-panel` → `mountParamPanel`
-  - `#preview` → `mountPreview`
-  - `#export-panel` → `mountExportPanel`
+- main.js がレイアウト DOM を作り、各モジュールを mount する。上から縦積みで、DOM の骨組み(id):
+  - `#warnings` 警告の一覧(decodeShareQuery の警告、resolveId の失敗、上限超過など)。警告が無いときは隠す
+  - `#catalog` → `mountCatalog`(ページ最上部のタイルカタログ)
+  - `#detail` 選択中の模様の詳細領域。`presetId` が null のときは隠す。中身は次の順:
+    1. `#detail-name` 名称(別名タイルから選んだときはその名称と「別名(= 参照先)」)と「一覧へ戻る」
+    2. `#preview` → `mountPreview`(大きめのプレビュー)
+    3. `<details class="settings">`「詳細設定」(初期は閉)の中に `#param-panel` → `mountParamPanel` と `#overrides-json`(設定 JSON)
+    4. `#export-panel` → `mountExportPanel`(単位・幅・高さ・dpi と SVG / PNG のダウンロードボタン)
+    5. 共有リンク(`#share-link` と「リンクをコピー」)
+- タイルを選ぶと詳細領域へスクロールする。URL に `id` があって復元したときも同じ。
 - 状態が変わるたびに main.js が各モジュールの `update(state)` を呼ぶ。
 - `history.replaceState` で URL を更新する(失敗しても無視せず、警告を出さずに続行はしない: try/catch で握るのは URL 更新だけ)。
 - 「リンクをコピー」ボタンは main.js が持つ。
@@ -107,24 +111,28 @@ export function mountXxx(container, props) -> { update(state): void, destroy(): 
 - エラー・警告はモジュール内に表示する(握りつぶさない)。ライブラリの例外は `error.message` を画面に出す。
 - 日本語の表示文言。色は `--earth` と `--white` の CSS 変数だけを使う(モジュール内で色を書かない。ink/paper の値は `buildRenderOptions` が渡す)。
 - 罫線は実線のみ。角丸・影・半透明・イタリック・グラデーションを使わない。
-- 基本の要素スタイル(button, input, textarea, 見出し, 余白, 2 列レイアウト)は `site/assets/style.css` が持つ。モジュール固有のスタイルは担当が次のファイルに書く(index.html に link 済み): `site/assets/ui/presetPicker.css`, `site/assets/ui/paramPanel.css`。preview.js と exportPanel.js はスタイルを要素の style 属性で持つ(`--earth` / `--white` のみ)ので CSS ファイルは無い(段階 2 で index.html の存在しない link を削除)。`style.css` は app-1 だけが編集する。
+- 基本の要素スタイル(button, input, textarea, 見出し, 余白, 2 列レイアウト)は `site/assets/style.css` が持つ。モジュール固有のスタイルは担当が次のファイルに書く(index.html に link 済み): `site/assets/ui/catalog.css`(カタログと詳細領域の枠), `site/assets/ui/paramPanel.css`。preview.js と exportPanel.js はスタイルを要素の style 属性で持つ(`--earth` / `--white` のみ)ので CSS ファイルは無い(段階 2 で index.html の存在しない link を削除)。`style.css` は app-1 だけが編集する。
 - 携帯幅(360 px)で横スクロールを出さない。左右の余白は body の 16 px。
 
 ---
 
 ## 4. 各モジュールの公開関数
 
-### 4.1 presetPicker.js(app-2)
+### 4.1 catalog.js(app-2)
 
 ```js
-mountPresetPicker(container, {
-  state,                       // State(読み取り専用)
-  onSelect(canonicalId),       // ユーザーがプリセットを選んだとき。canonicalId は resolveId() の結果
-})
+mountCatalog(container, {
+  state,                              // State(読み取り専用)
+  onSelect(canonicalId, rowId),       // タイルを選んだとき。canonicalId は resolveId(rowId) の結果、rowId は選んだタイルの ID
+}) -> { update(state), destroy(), rowOf(id) }   // rowOf は listPresets() の行(表示外も含む)
 ```
-- 表タブ(3-1 … 3-9, 4-1 … 4-3, 5)と全文検索(日本語名・文字記号・コード)。`listPresets()` を使う。
-- alias は参照先の行に「= 〇〇」のように併記。重複記号は候補を並べる。
-- `state.presetId` の行を選択状態で表示。
+- `listPresets()` の全行を 1 つの平らなグリッドに並べる。表のタブ・見出し・区分は作らない。
+- 除外: `archetypes` がすべて `'empty'`(または空)の行と、参照先がそうである alias。模様を持つ alias はその名称で 1 枚のタイルとして出す。
+- 並び順: `src/presets/yomi.js` の `YOMI[id]`(ひらがな)をカタカナ→ひらがなに畳んだ文字列のコードポイント順。同じ読みは ID 順。読みの無い ID は捨てずに `console.warn` で列挙し、末尾に ID 順で置く。
+- 検索窓: 名称(ja/en)・読み・記号・コード・ID。NFKC・小文字化・カタカナ→ひらがなで畳み、空白区切りの全語を含むもの(AND)。件数は「表示 N 件」(N は絞り込み後)とだけ出す。
+- タイル: 模様の小さなプレビュー(`renderSVG(id, {})` = 既定色 #000000 / #ffffff、枠付き、IntersectionObserver で遅延描画)と名称。描画失敗はタイル内に理由を出し、console.error にも出す。
+- `state.presetId` のタイルを選択状態(`aria-pressed="true"`)で表示。別名タイルから選んだときはそのタイルを選択状態にする。
+- 純粋関数(node:test 用、DOM 無し): `foldText`, `isBlankRow`, `partitionRows`, `sortByYomi`, `filterCatalog`, `searchTextOf`, `buildCatalog`。
 
 ### 4.2 paramPanel.js(app-2)
 
@@ -147,7 +155,7 @@ mountPreview(container, { state })
 ```
 - `renderSVG(state.presetId, buildRenderOptions(state))` を 100 ms デバウンスで描画。`buildRenderOptions` の結果(JSON 文字列)が前回と同じなら再描画しない。
 - SVG をそのまま埋め込む(`innerHTML` へ `svg` 文字列を入れてよい。ユーザー入力は含まれない)。
-- mm 目盛、タイル境界の表示切替(tileMode に関係なく表示 UI は持つ)、枠の表示切替、拡大率。
+- mm 目盛、タイル境界の表示切替(tileMode に関係なく表示 UI は持つ)、枠の表示切替、拡大率(初期 300 %。10 mm の目盛も拡大率に従う)。
 - `meta.warnings` と例外メッセージをプレビュー下に表示。`presetId` が null のときは描画せず案内だけ出す。
 
 ### 4.4 exportPanel.js(app-3)
@@ -158,9 +166,10 @@ mountExportPanel(container, {
   onOutputChange(patch)            // output の一部を更新。setOutput に渡す
 })
 ```
-- 単位(mm/pt/px)、幅・高さ(`output.width` が null のときはプリセット枠を換算して表示)、dpi、形式(svg/png)を編集。
+- 単位(mm/pt/px)、幅・高さ(`output.width` が null のときはプリセット枠を換算して表示)、dpi を編集。
+- 「SVG をダウンロード」「PNG をダウンロード」の 2 つのボタン。押したボタンが形式を決める(`output.format` は読まず、書き換えもしない)。PNG の画素数と上限は常に表示する。
 - 書き出し: `renderSVG`(svg)または `renderPNG`(png)を `buildRenderOptions(state, {forExport: true})` で呼ぶ。`<a download>` で保存。
-- ファイル名: `<id>_<density>_<w>x<h><unit>_<dpi>dpi.<ext>`。`id` の `:` は `_` に置換(例 `zc_111101002_1_20x10mm_300dpi.svg`)。`density` は `options.density` の既定 1。
+- ファイル名: `<id>_<density>_<w>x<h><unit>_<dpi>dpi.<ext>`(`ext` は押したボタンの形式)。`id` の `:` は `_` に置換(例 `zc_111101002_1_20x10mm_300dpi.svg`)。`density` は `options.density` の既定 1。
 - 書き出し中・失敗は同じパネル内に表示。
 
 ---

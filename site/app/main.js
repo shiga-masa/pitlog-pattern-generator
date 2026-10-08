@@ -2,6 +2,10 @@
  * Site entry point (CONTRACT.md §2). Builds the layout, restores the state
  * from the URL, wires the UI modules to the state, and writes the state back
  * to the URL and to the share link.
+ *
+ * Layout, top to bottom: warnings, the pattern catalogue, and (once a pattern is
+ * selected) the detail area: name + preview, the folded "詳細設定" panel, the SVG/PNG
+ * download buttons, and the share link.
  */
 
 import {
@@ -15,7 +19,7 @@ import {
   encodeShareQuery,
 } from './state.js';
 import { resolveId } from '../../src/index.js';
-import { mountPresetPicker } from './ui/presetPicker.js';
+import { mountCatalog } from './ui/catalog.js';
 import { mountParamPanel } from './ui/paramPanel.js';
 import { mountPreview } from './ui/preview.js';
 import { mountExportPanel } from './ui/exportPanel.js';
@@ -34,10 +38,6 @@ function el(tag, attrs = {}, children = []) {
   return node;
 }
 
-function section(id, title) {
-  return el('section', { id, class: 'block' }, [el('h2', { text: title })]);
-}
-
 const warningBox = el('section', { id: 'warnings', class: 'notice', 'aria-live': 'polite', hidden: '' });
 const linkField = el('input', { id: 'share-link', type: 'text', readonly: '', 'aria-label': '共有リンク' });
 const copyButton = el('button', { id: 'copy-link', type: 'button', text: 'リンクをコピー' });
@@ -46,7 +46,7 @@ const shareBar = el('div', { class: 'share' }, [
   el('div', { class: 'share-row' }, [linkField, copyButton]),
 ]);
 const overridesBox = el('section', { id: 'overrides-json', class: 'block' }, [
-  el('h2', { text: '設定 JSON' }),
+  el('h3', { text: '設定 JSON' }),
   el('p', {
     class: 'hint',
     text: '層の変更が多く共有リンクに載せきれないときは、下の欄の JSON をコピーして保存してください。保存した JSON は下の入力欄に貼って「読み込む」で復元できます。',
@@ -58,20 +58,33 @@ const overridesBox = el('section', { id: 'overrides-json', class: 'block' }, [
   ]),
   el('p', { id: 'overrides-status', class: 'hint' }),
 ]);
-const pickerBox = section('preset-picker', 'プリセット');
-const paramBox = section('param-panel', 'パラメータ');
-const previewBox = section('preview', 'プレビュー');
-const exportBox = section('export-panel', '書き出し');
 
-app.append(
-  warningBox,
-  shareBar,
-  overridesBox,
-  el('div', { class: 'layout' }, [
-    el('div', { class: 'col col-left' }, [pickerBox, paramBox]),
-    el('div', { class: 'col col-right' }, [previewBox, exportBox]),
+const catalogBox = el('section', { id: 'catalog', class: 'catalog-block', 'aria-label': '模様の一覧' });
+const selectHint = el('p', { class: 'hint', text: '模様を選ぶと、下に詳細設定とダウンロードが出ます。' });
+
+const detailName = el('h2', { id: 'detail-name' });
+const detailMeta = el('p', { class: 'detail-meta' });
+const backButton = el('button', { type: 'button', class: 'detail-back', text: '一覧へ戻る' });
+const previewBox = el('div', { id: 'preview' });
+const paramBox = el('div', { id: 'param-panel' });
+const exportBox = el('div', { id: 'export-panel' });
+const settings = el('details', { class: 'settings' }, [
+  el('summary', { text: '詳細設定' }),
+  el('div', { class: 'settings-body' }, [paramBox, overridesBox]),
+]);
+const detail = el('section', { id: 'detail', class: 'detail block', 'aria-labelledby': 'detail-name', hidden: '' }, [
+  el('div', { class: 'detail-head' }, [
+    el('div', { class: 'detail-title' }, [detailName, detailMeta]),
+    backButton,
   ]),
-);
+  el('div', { class: 'detail-body' }, [previewBox, settings, exportBox, shareBar]),
+]);
+
+app.append(warningBox, catalogBox, selectHint, detail);
+
+backButton.addEventListener('click', () => {
+  catalogBox.scrollIntoView({ block: 'start' });
+});
 
 /* ---------- warnings ---------- */
 
@@ -123,11 +136,23 @@ setOutput(initial.output);
 
 /* ---------- mount the UI modules ---------- */
 
+let chosenRowId = null; // tile id the user clicked
+let chosenCanonical = null; // resolveId() of that tile
+let scrollToDetail = initial.presetId !== null;
+
+const catalog = mountCatalog(catalogBox, {
+  state: getState(),
+  onSelect: (canonicalId, rowId) => {
+    chosenRowId = rowId;
+    chosenCanonical = canonicalId;
+    scrollToDetail = true;
+    if (canonicalId === getState().presetId) render(getState());
+    else guard('input', () => selectPreset(canonicalId));
+  },
+});
+
 const mounts = [
-  mountPresetPicker(pickerBox, {
-    state: getState(),
-    onSelect: (canonicalId) => guard('input', () => selectPreset(canonicalId)),
-  }),
+  catalog,
   mountParamPanel(paramBox, {
     state: getState(),
     onOptionChange: (key, value) => guard('input', () => setOption(key, value)),
@@ -200,10 +225,48 @@ function writeBack(state) {
   }
 }
 
+/* ---------- detail heading ---------- */
+
+function describe(row) {
+  const parts = [];
+  if (row.symbol) parts.push(`記号 ${row.symbol}`);
+  if (row.code) parts.push(`コード ${row.code}`);
+  return parts;
+}
+
+function renderDetail(state) {
+  const id = state.presetId;
+  detail.hidden = id === null;
+  selectHint.hidden = id !== null;
+  if (id === null) {
+    chosenRowId = null;
+    return;
+  }
+  const chosen = chosenRowId !== null ? catalog.rowOf(chosenRowId) : undefined;
+  const row = chosen && chosenCanonical === id ? chosen : catalog.rowOf(id);
+  if (!row) {
+    detailName.textContent = id;
+    detailMeta.textContent = '';
+    return;
+  }
+  detailName.textContent = row.names?.ja ?? row.id;
+  const parts = describe(row);
+  if (row.aliasOf) {
+    const target = catalog.rowOf(row.aliasOf);
+    parts.push(`別名(= ${target?.names?.ja ?? row.aliasOf})`);
+  }
+  detailMeta.textContent = parts.join(' · ');
+  if (scrollToDetail) {
+    scrollToDetail = false;
+    detail.scrollIntoView({ block: 'start' });
+  }
+}
+
 /* ---------- render loop ---------- */
 
 function render(state) {
   for (const m of mounts) m.update(state);
+  renderDetail(state);
   writeBack(state);
 }
 
