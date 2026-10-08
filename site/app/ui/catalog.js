@@ -12,6 +12,7 @@
  *     hiragana match each other.
  *   - Each tile has a small preview drawn lazily (IntersectionObserver) with the default
  *     ink #000000 / paper #ffffff, the name, and below it the code (codeLabelOf) on one line.
+ *   - Next to the "表示 N 件" count: the bulk ZIP export of every tile (bulkExport.js).
  * Styles: site/assets/ui/catalog.css. UI colours are the two CSS variables only.
  *
  * The top level touches no DOM, so the pure helpers can be imported from node.
@@ -19,6 +20,7 @@
 
 import { listPresets, resolveId, renderSVG } from '../../../src/index.js';
 import { YOMI } from '../../../src/presets/yomi.js';
+import { mountBulkExport } from './bulkExport.js';
 
 /**
  * Fold text for matching: NFKC, lower case, and katakana folded to hiragana,
@@ -210,13 +212,18 @@ export function mountCatalog(container, props = {}) {
   searchLabel.append(search);
   const count = el('p', 'cat-count');
   count.setAttribute('role', 'status');
+  const bulkBox = el('div', 'cat-bulk');
+  const bar = el('div', 'cat-bar');
+  bar.append(count, bulkBox);
   const grid = el('ul', 'cat-grid');
   const empty = el('p', 'cat-empty', '該当する模様はありません。');
   empty.hidden = true;
   const notice = el('p', 'cat-error');
   notice.hidden = true;
-  root.append(searchLabel, count, grid, empty, notice);
+  root.append(searchLabel, bar, grid, empty, notice);
   container.replaceChildren(root);
+  // Bulk ZIP export of every tile (not only the filtered ones): CONTRACT §4.5.
+  const bulk = mountBulkExport(bulkBox, { rows: model.rows });
 
   /* lazy thumbnails */
   const thumbCache = new Map(); // id -> svg text or Error
@@ -330,6 +337,7 @@ export function mountCatalog(container, props = {}) {
     },
     destroy() {
       if (io) io.disconnect();
+      bulk.destroy();
       container.replaceChildren();
     },
     /** listPresets() row for an id (shown or not). */

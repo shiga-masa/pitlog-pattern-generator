@@ -131,6 +131,7 @@ mountCatalog(container, {
 - 読み: `src/presets/yomi.js` の `YOMI[id]` は `string | string[]`(ひらがな)。配列は先頭が正の読み(並び順に使う)、全要素が検索の一致対象。別読みは一般に併用されるものだけを入れる。
 - 並び順: `YOMI[id]` の先頭の読みをカタカナ→ひらがなに畳んだ文字列のコードポイント順。同じ読みは ID 順。読みの無い ID は捨てずに `console.warn` で列挙し、末尾に ID 順で置く。
 - 検索窓: 名称(ja/en)・読み(別読みを含む全要素)・記号・コード・ID。NFKC・小文字化・カタカナ→ひらがなで畳み、空白区切りの全語を含むもの(AND)。件数は「表示 N 件」(N は絞り込み後)とだけ出す。
+- 「表示 N 件」の横(`.cat-bar`)に一括 ZIP 出力(`mountBulkExport`, §4.5)を置く。渡すのは絞り込み前の全行(`buildCatalog().rows`)。
 - タイル: 模様の小さなプレビュー(`renderSVG(id, {})` = 既定色 #000000 / #ffffff、枠付き、IntersectionObserver で遅延描画)と名称。描画失敗はタイル内に理由を出し、console.error にも出す。
 - `state.presetId` のタイルを選択状態(`aria-pressed="true"`)で表示。別名タイルから選んだときはそのタイルを選択状態にする。
 - 純粋関数(node:test 用、DOM 無し): `foldText`, `isBlankRow`, `partitionRows`, `readingsOf`, `primaryReading`, `sortByYomi`, `filterCatalog`, `searchTextOf`, `buildCatalog`。
@@ -174,6 +175,24 @@ mountExportPanel(container, {
 - 書き出し中・失敗は同じパネル内に表示。
 
 ---
+
+### 4.5 bulkExport.js(カタログの一括 ZIP 出力)
+
+```js
+mountBulkExport(container, { rows })   // rows = カタログの全行(絞り込み前)。catalog.js が mount する
+  -> { destroy() }
+```
+- ボタン「全 N 件を ZIP で保存(SVG と PNG、既定設定)」。検索で絞り込み中でも **全件** を出す(ボタン表記に件数を明示)。
+- 設定は固定の既定設定 `BULK_SETTINGS = {ink: '#000000', paper: '#ffffff', dpi: 300}`。寸法はプリセット枠(`size` を渡さない)。SVG は `renderSVG(id, {ink, paper})`、PNG は `renderPNG(id, {ink, paper, dpi: 300})`。詳細設定・state は読まない。
+- ZIP の中身は画像だけ: `svg/<コード>_<名称>.svg` と `png/<コード>_<名称>.png`(README や エラー一覧のファイルは入れない)。
+  - コード = `codeLabelOf(row)` の `:` を `-` に置換(`t3-9:2` → `t3-9-2`)。名称 = `names.ja`。両方の `/ \ : * ? " < > |` と制御文字を `_` に置換し、末尾の `.` と空白を削る(`safeNamePart`)。
+  - 大文字小文字を無視して同名になった後発の行には `_2`, `_3`… を付け、画面とコンソールに列挙する(現行 215 件では該当なし。テストで固定)。
+  - ZIP のファイル名: `borehole-patterns_default_YYYYMMDD-HHMM.zip`(端末のローカル時刻)。
+- 1 件ずつ `await` し、各件の後に `setTimeout(0)` でイベントループへ返す。ボタン下に「書き出し中 n / N(名称)」を出す。「キャンセル」で次の件の前に止め、ZIP は作らない。
+- 失敗は黙って捨てない: 形式ごとに try/catch し、片方だけ成功した画像は ZIP に入れる。終了時(キャンセル時も)に「処理 / スキップ / 失敗」の件数を出し、失敗した ID・形式・理由を画面の一覧(`.bulk-failures`)と `console.error` に出す。件数の単位は模様(SVG と PNG の両方が成功で処理、どちらかが失敗で失敗、キャンセルで描かなかったものがスキップ)。
+- 純粋関数(node:test 用、DOM 無し): `safeNamePart`, `fileStemOf`, `assignFileStems`, `zipFileName`, `collectBulkEntries(rows, {renderSVG, renderPNG, onProgress, signal})`(描画関数を注入)。
+- ZIP 本体は `site/app/zip.js`(依存なし、DOM なし): STORE(無圧縮)、CRC-32、UTF-8 ファイル名フラグ(bit 11)、MS-DOS 日時。ZIP64 は持たず、4 GiB(0xFFFFFFFF バイト)または 65535 件を超える場合は `ZipLimitError` で止める(`zipSizeOf` が先に検査)。「作成システム」は Unix(host 3)にする: MS-DOS(host 0)だと Info-ZIP の unzip が UTF-8 フラグを無視して日本語名を化けさせるため。
+- スタイルは `site/assets/ui/catalog.css` の `.cat-bar` / `.bulk-*`。
 
 ## 5. 未決定(app-1 の判断で仮に決めたもの)
 - `output.width/height` の null は「プリセット枠」。枠の値は `toSpec(presetId).frame`(pt、表ごとの既定を適用済み)から換算する。`getPreset()` の `frame` は省略されていることがある(段階 2 で修正)。

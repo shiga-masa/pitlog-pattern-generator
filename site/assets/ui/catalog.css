@@ -214,3 +214,82 @@
 .detail[hidden] {
   display: none;
 }
+
+/* ---------- count line with the bulk ZIP export (bulkExport.js) ---------- */
+
+.cat-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px 16px;
+  min-width: 0;
+}
+
+.cat-bar .cat-count {
+  margin: 0;
+  padding: 10px 0;
+}
+
+.cat-bulk {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+
+.bulk {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.bulk-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
+.bulk-start {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+.bulk-cancel {
+  flex: 0 0 auto;
+}
+
+.bulk-start:disabled,
+.bulk-cancel:disabled {
+  cursor: default;
+  background: var(--white);
+  color: var(--earth);
+}
+
+.bulk-progress,
+.bulk-result {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.bulk-failures {
+  margin: 0;
+  padding: 0 0 0 1.2em;
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+}
+
+.bulk-buttons [hidden],
+.bulk-progress[hidden],
+.bulk-result[hidden],
+.bulk-failures[hidden] {
+  display: none;
+}
+
+@media (max-width: 479px) {
+  .bulk-cancel {
+    width: 100%;
+  }
+}
