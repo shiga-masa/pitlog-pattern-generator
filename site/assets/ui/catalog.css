@@ -1,7 +1,9 @@
 /*
  * Catalogue styles (site/app/ui/catalog.js).
  * Two colours only (--earth, --white), solid rules, no radius, shadow, opacity or italics.
- * A selected tile is shown by a thicker rule and the name in inverted colours.
+ * Tiles carry no border: the grid gap separates them. A selected tile shows its name
+ * and code in inverted colours with a 4 px rule under the preview; keyboard focus keeps
+ * the global :focus-visible outline (style.css).
  * Works at 360 px: the grid wraps to three columns, nothing is wider than the page.
  */
 
@@ -35,7 +37,7 @@
   padding: 0;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 8px;
+  gap: 20px 16px;
   min-width: 0;
 }
 
@@ -50,7 +52,7 @@
   width: 100%;
   min-width: 0;
   padding: 0;
-  border: 1px solid var(--earth);
+  border: 0;
   background: var(--white);
   color: var(--earth);
   font-weight: 400;
@@ -61,8 +63,12 @@
 .cat-tile:hover {
   background: var(--white);
   color: var(--earth);
-  outline: 2px solid var(--earth);
-  outline-offset: -2px;
+}
+
+.cat-tile:hover .cat-name {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
 }
 
 .cat-thumb {
@@ -70,7 +76,7 @@
   width: 100%;
   aspect-ratio: 2 / 1;
   background: var(--white);
-  border-bottom: 1px solid var(--earth);
+  border-bottom: 4px solid var(--white);
   overflow: hidden;
 }
 
@@ -112,9 +118,8 @@
   overflow: hidden;
 }
 
-.cat-tile[aria-pressed="true"] {
-  outline: 3px solid var(--earth);
-  outline-offset: -3px;
+.cat-tile[aria-pressed="true"] .cat-thumb {
+  border-bottom-color: var(--earth);
 }
 
 .cat-tile[aria-pressed="true"] .cat-name,
