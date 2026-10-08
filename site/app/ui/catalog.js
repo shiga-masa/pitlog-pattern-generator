@@ -11,7 +11,7 @@
  *   - The search box narrows the tiles by name, every reading, symbol, code and id; katakana and
  *     hiragana match each other.
  *   - Each tile has a small preview drawn lazily (IntersectionObserver) with the default
- *     ink #000000 / paper #ffffff, and the name.
+ *     ink #000000 / paper #ffffff, the name, and below it the code (codeLabelOf) on one line.
  * Styles: site/assets/ui/catalog.css. UI colours are the two CSS variables only.
  *
  * The top level touches no DOM, so the pure helpers can be imported from node.
@@ -142,6 +142,26 @@ export function buildCatalog(rows, yomi) {
   const { shown, excluded } = partitionRows(rows);
   const { sorted, missing } = sortByYomi(shown, yomi);
   return { rows: sorted, excluded: excluded.length, missingYomi: missing };
+}
+
+/**
+ * Code shown on the second line of a tile: the id without its 'zc:' prefix
+ * ('zc:111101002' -> '111101002', 'zc:t3-9:2' -> 't3-9:2'). A symbol-form id, whose last
+ * ':'-separated part is not a plain integer, shows that symbol part only ('zc:t4-3:-Co' -> '-Co').
+ * An id without the prefix is shown as it is.
+ * @param {{id: string}} row
+ * @returns {string}
+ */
+export function codeLabelOf(row) {
+  const id = String(row?.id ?? '');
+  if (!id.startsWith('zc:')) return id;
+  const rest = id.slice(3);
+  const parts = rest.split(':');
+  if (parts.length > 1) {
+    const last = parts[parts.length - 1];
+    if (last !== '' && !/^\d+$/.test(last)) return last;
+  }
+  return rest;
 }
 
 /* ---------------------------------------------------------------------- DOM */
@@ -277,7 +297,10 @@ export function mountCatalog(container, props = {}) {
     b.title = [name, r.symbol ? `記号 ${r.symbol}` : '', r.code ? `コード ${r.code}` : ''].filter(Boolean).join(' / ');
     const box = el('span', 'cat-thumb');
     pending.set(box, r.id);
-    b.append(box, el('span', 'cat-name', name));
+    const code = codeLabelOf(r);
+    const codeEl = el('span', 'cat-code', code);
+    codeEl.style.setProperty('--code-len', String(Math.max(code.length, 1)));
+    b.append(box, el('span', 'cat-name', name), codeEl);
     b.addEventListener('click', () => choose(r));
     li.append(b);
     tiles.set(r.id, li);

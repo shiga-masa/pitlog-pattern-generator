@@ -9,6 +9,7 @@ import {
   readingsOf,
   primaryReading,
   buildCatalog,
+  codeLabelOf,
 } from '../../site/app/ui/catalog.js';
 import { listPresets } from '../../src/index.js';
 import { YOMI } from '../../src/presets/yomi.js';
@@ -139,4 +140,24 @@ test('buildCatalog on the real registry: no blank pattern shown, counts add up, 
   // rows without a reading are all at the end
   const tail = model.rows.slice(model.rows.length - model.missingYomi.length).map((r) => r.id);
   assert.deepEqual(tail, model.missingYomi);
+});
+
+test('codeLabelOf strips zc: and shows the symbol part of a symbol-form id', () => {
+  assert.equal(codeLabelOf({ id: 'zc:111101002' }), '111101002');
+  assert.equal(codeLabelOf({ id: 'zc:t3-9:2' }), 't3-9:2');
+  assert.equal(codeLabelOf({ id: 'zc:t5-1:100' }), 't5-1:100');
+  assert.equal(codeLabelOf({ id: 'zc:t4-3:-B' }), '-B');
+  assert.equal(codeLabelOf({ id: 'zc:t4-3:-Co' }), '-Co');
+  assert.equal(codeLabelOf({ id: 'zc:t4-3:C' }), 'C');
+  assert.equal(codeLabelOf({ id: 'a:7' }), 'a:7');
+});
+
+test('codeLabelOf on the real registry: never empty, never contains zc:, symbol ids match row.symbol', () => {
+  for (const r of buildCatalog(listPresets(), YOMI).rows) {
+    const c = codeLabelOf(r);
+    assert.ok(c.length > 0, r.id);
+    assert.ok(!c.includes('zc:'), r.id);
+    assert.ok(c.length <= 12, `${r.id}: ${c}`);
+    if (r.symbol && /^zc:t\d+-\d+:/.test(r.id) && !/:\d+$/.test(r.id)) assert.equal(c, r.symbol, r.id);
+  }
 });

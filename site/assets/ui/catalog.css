@@ -55,6 +55,7 @@
   color: var(--earth);
   font-weight: 400;
   text-align: left;
+  container-type: inline-size;
 }
 
 .cat-tile:hover {
@@ -97,12 +98,27 @@
   overflow-wrap: anywhere;
 }
 
+/* Second line: the code. Lighter and smaller than the name, never wrapped or cut:
+   the font shrinks so that --code-len monospace characters fit the tile width
+   (0.6 em per character plus 12 px padding). */
+.cat-code {
+  display: block;
+  padding: 0 6px 4px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: min(0.75rem, calc((100cqi - 12px) / (var(--code-len, 9) * 0.62)));
+  line-height: 1.4;
+  font-weight: 400;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
 .cat-tile[aria-pressed="true"] {
   outline: 3px solid var(--earth);
   outline-offset: -3px;
 }
 
-.cat-tile[aria-pressed="true"] .cat-name {
+.cat-tile[aria-pressed="true"] .cat-name,
+.cat-tile[aria-pressed="true"] .cat-code {
   background: var(--earth);
   color: var(--white);
 }
