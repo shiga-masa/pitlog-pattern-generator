@@ -1,0 +1,240 @@
+/*
+ * Site base styles (docs/CONVENTIONS.md §12).
+ * Exactly two colours: --earth and --white. No grey, no translucency, no radius,
+ * no shadow, no dark mode, no gradient, no italics. Hierarchy = size, weight,
+ * spacing and solid rules.
+ */
+:root {
+  --earth: #2b2420;
+  --white: #ffffff;
+  --font-sans: Arial, "Liberation Sans", "Hiragino Sans", "Noto Sans CJK JP", "Yu Gothic", Meiryo, "DejaVu Sans", sans-serif;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+html {
+  color-scheme: light;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  padding: 0 16px;
+  background: var(--white);
+  color: var(--earth);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.6;
+  font-style: normal;
+  overflow-x: hidden;
+}
+
+em, i, cite, dfn, var, address {
+  font-style: normal;
+}
+
+::selection {
+  background: var(--earth);
+  color: var(--white);
+}
+
+h1, h2, h3, p {
+  margin: 0;
+}
+
+h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+h2 {
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.hint {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin-top: 8px;
+}
+
+a {
+  color: var(--earth);
+}
+
+:focus-visible {
+  outline: 2px solid var(--earth);
+  outline-offset: 2px;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: var(--earth);
+  background: var(--white);
+  border: 1px solid var(--earth);
+  border-radius: 0;
+  padding: 6px 10px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+button {
+  cursor: pointer;
+  font-weight: 700;
+  padding: 8px 16px;
+}
+
+button:hover {
+  background: var(--earth);
+  color: var(--white);
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--earth);
+}
+
+input[type="color"] {
+  padding: 2px;
+  width: 48px;
+  height: 36px;
+}
+
+svg,
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* ---------- site frame ---------- */
+
+.site-header,
+#app,
+.site-footer {
+  max-width: 1080px;
+  margin: 0 auto;
+}
+
+.site-header {
+  padding: 24px 0 12px;
+  border-bottom: 2px solid var(--earth);
+}
+
+#app {
+  padding: 16px 0 24px;
+}
+
+.site-footer {
+  padding: 12px 0 24px;
+  border-top: 1px solid var(--earth);
+  font-size: 0.875rem;
+}
+
+/* ---------- layout: left = presets and parameters, right = preview and export ---------- */
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
+}
+
+.col {
+  display: grid;
+  gap: 24px;
+  min-width: 0;
+}
+
+@media (min-width: 800px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 32px;
+  }
+}
+
+.block {
+  border-top: 1px solid var(--earth);
+  padding-top: 16px;
+  min-width: 0;
+}
+
+/* ---------- notices and the share bar ---------- */
+
+.notice {
+  border: 1px solid var(--earth);
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  display: grid;
+  gap: 4px;
+}
+
+.notice p {
+  font-weight: 700;
+  font-size: 0.9375rem;
+  overflow-wrap: anywhere;
+}
+
+.share {
+  border-top: 1px solid var(--earth);
+  border-bottom: 1px solid var(--earth);
+  padding: 12px 0;
+  margin-bottom: 16px;
+}
+
+.share-label {
+  font-weight: 700;
+  font-size: 0.875rem;
+  margin-bottom: 8px;
+}
+
+.share-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.share-row input,
+#share-link,
+#overrides-export,
+#overrides-input {
+  flex: 1 1 200px;
+  width: 100%;
+}
+
+textarea {
+  width: 100%;
+  font-family: ui-monospace, Menlo, Consolas, "DejaVu Sans Mono", monospace;
+  font-size: 0.875rem;
+}
+
+#overrides-json textarea + textarea {
+  margin-top: 8px;
+}
+
+#overrides-json[hidden],
+#overrides-export[hidden],
+#warnings[hidden] {
+  display: none;
+}
+
+/* Phone width: 16 px side gutters are provided by body; no horizontal page scroll. */
+@media (max-width: 479px) {
+  h1 {
+    font-size: 1.25rem;
+  }
+  button {
+    width: 100%;
+  }
+  .share-row button {
+    width: auto;
+    flex: 0 0 auto;
+  }
+}

@@ -5,10 +5,7 @@
  * this archetype's parameters: validation, defaults and density scaling all read it.
  */
 
-import { NotImplementedError } from '../core/errors.js';
 import { obj } from '../core/schema.js';
-
-const OWNER = 'arch-4';
 
 export const ARCHETYPE = 'empty';
 
@@ -27,16 +24,17 @@ export const PARAMS = obj({}, 'empty has no parameters');
  * @returns {import('../core/types.js').LayerResult}
  */
 export function render(layer, ctx) {
-  throw new NotImplementedError('archetype empty: render()', OWNER);
+  return { primitives: [], placed: 0, skipped: 0, warnings: [], anchors: [] };
 }
 
 /**
  * Smallest seamless period for tileMode 'period' (design §5.5), or null when none exists
  * (the caller then falls back as documented in CONVENTIONS §3.3).
+ * Nothing is drawn, so any cell serves as the period: one frame.
  * @param {import('../core/types.js').ResolvedLayer} layer
  * @param {import('../core/types.js').LayerContext} ctx
  * @returns {{w:number, h:number} | null}
  */
 export function period(layer, ctx) {
-  throw new NotImplementedError('archetype empty: period()', OWNER);
+  return { w: ctx.region.width, h: ctx.region.height };
 }

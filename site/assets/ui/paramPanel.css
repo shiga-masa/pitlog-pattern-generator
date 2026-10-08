@@ -1,0 +1,245 @@
+/*
+ * Parameter panel styles (site/app/ui/paramPanel.js). Owner: app-2.
+ * Two colours only (--earth, --white), solid rules, no radius, shadow, opacity or italics.
+ * Hierarchy: size and weight; a warning is shown in bold or underlined, never in another colour.
+ * Works at 360 px: rows wrap, nothing is wider than the column.
+ */
+
+.pp {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.pp-head {
+  border-bottom: 2px solid var(--earth);
+  padding-bottom: 8px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.pp-head .pp-title {
+  font-size: 1.125rem;
+}
+
+.pp-group {
+  display: grid;
+  gap: 0;
+  min-width: 0;
+  border-bottom: 1px solid var(--earth);
+  padding-bottom: 8px;
+}
+
+.pp-section {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0;
+  padding: 12px 0 4px;
+  overflow-wrap: anywhere;
+}
+
+.pp-field,
+.pp-bare,
+.pp-object {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding: 10px 0;
+}
+
+.pp-field {
+  border-top: 1px solid var(--earth);
+}
+
+.pp-bare {
+  padding: 0;
+}
+
+.pp-object {
+  padding-left: 12px;
+  border-left: 1px solid var(--earth);
+}
+
+.pp-title {
+  font-weight: 700;
+  font-size: 0.9375rem;
+  overflow-wrap: anywhere;
+}
+
+.pp-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border: 1px solid var(--earth);
+}
+
+.pp-key {
+  font-family: ui-monospace, Menlo, Consolas, "DejaVu Sans Mono", monospace;
+  font-size: 0.75rem;
+  overflow-wrap: anywhere;
+}
+
+.pp-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.pp-slot {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.pp-range {
+  -webkit-appearance: none;
+  appearance: none;
+  flex: 1 1 140px;
+  width: 100%;
+  min-width: 0;
+  height: 24px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.pp-range::-webkit-slider-runnable-track {
+  height: 2px;
+  background: var(--earth);
+}
+
+.pp-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 24px;
+  margin-top: -11px;
+  border: 0;
+  border-radius: 0;
+  background: var(--earth);
+}
+
+.pp-range::-moz-range-track {
+  height: 2px;
+  background: var(--earth);
+}
+
+.pp-range::-moz-range-thumb {
+  width: 12px;
+  height: 24px;
+  border: 0;
+  border-radius: 0;
+  background: var(--earth);
+}
+
+.pp-num {
+  width: 8em;
+  max-width: 100%;
+  min-height: 36px;
+  font-variant-numeric: tabular-nums;
+}
+
+.pp-text {
+  width: 100%;
+  min-height: 36px;
+}
+
+.pp-select {
+  min-height: 36px;
+  max-width: 100%;
+}
+
+.pp-unit {
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+}
+
+.pp-check {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--earth);
+  background: var(--white);
+}
+
+.pp-check:checked {
+  background: var(--earth);
+}
+
+.pp-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pp-color {
+  width: 56px;
+  height: 36px;
+  padding: 2px;
+  border: 1px solid var(--earth);
+  background: var(--white);
+}
+
+.pp-color::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.pp-color::-webkit-color-swatch {
+  border: 0;
+  border-radius: 0;
+}
+
+.pp-color::-moz-color-swatch {
+  border: 0;
+  border-radius: 0;
+}
+
+.pp-reset {
+  width: auto;
+  font-size: 0.875rem;
+  font-weight: 400;
+  padding: 4px 10px;
+  min-height: 36px;
+}
+
+.pp-msg {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.pp-msg-error {
+  font-weight: 700;
+  border-left: 4px solid var(--earth);
+  padding-left: 8px;
+}
+
+.pp-msg-warn {
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.pp-unsupported {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  padding-top: 8px;
+  border-top: 1px solid var(--earth);
+  overflow-wrap: anywhere;
+}
+
+.pp-error {
+  font-weight: 700;
+  border-left: 4px solid var(--earth);
+  padding-left: 8px;
+  overflow-wrap: anywhere;
+}
+
+[hidden] { display: none !important; }

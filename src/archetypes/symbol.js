@@ -5,10 +5,10 @@
  * this archetype's parameters: validation, defaults and density scaling all read it.
  */
 
-import { NotImplementedError } from '../core/errors.js';
+import { GeometryError } from '../core/errors.js';
 import { arr, enumOf, obj, ratio, vec } from '../core/schema.js';
-
-const OWNER = 'arch-4';
+import { bboxInside } from '../core/geom.js';
+import { bboxOf, transformPrimitive } from '../core/primitives.js';
 
 export const ARCHETYPE = 'symbol';
 
@@ -31,16 +31,42 @@ export const PARAMS = obj({
  * @returns {import('../core/types.js').LayerResult}
  */
 export function render(layer, ctx) {
-  throw new NotImplementedError('archetype symbol: render()', OWNER);
+  if (!layer.motif) throw new GeometryError('symbol: layer needs a motif (the motif policy is required)');
+  const p = layer.params;
+  const region = ctx.region;
+  // 'center': the motif's bounding-box centre goes to the region centre. 'topLeft': to the region's (0, 0).
+  const base = p.anchor === 'center' ? { x: region.width / 2, y: region.height / 2 } : { x: region.x, y: region.y };
+  const local = ctx.buildMotif(layer.motif);
+  const primitives = [];
+  const anchors = [];
+  const warnings = [];
+  let placed = 0;
+  let skipped = 0;
+
+  p.offsets.forEach((off, i) => {
+    const x = base.x + off.x;
+    const y = base.y + off.y;
+    const placedPrims = local.map((q) => transformPrimitive(q, { scale: p.scale, x, y }));
+    if (bboxInside(bboxOf(placedPrims), region)) {
+      primitives.push(...placedPrims);
+      anchors.push({ x, y });
+      placed++;
+    } else {
+      skipped++;
+      warnings.push(`symbol: offsets[${i}] puts the motif outside the region; not drawn`);
+    }
+  });
+  return { primitives, placed, skipped, warnings, anchors };
 }
 
 /**
  * Smallest seamless period for tileMode 'period' (design §5.5), or null when none exists
  * (the caller then falls back as documented in CONVENTIONS §3.3).
+ * Design §5.5: symbol uses one frame (cell) as its period.
  * @param {import('../core/types.js').ResolvedLayer} layer
  * @param {import('../core/types.js').LayerContext} ctx
  * @returns {{w:number, h:number} | null}
  */
 export function period(layer, ctx) {
-  throw new NotImplementedError('archetype symbol: period()', OWNER);
+  return { w: ctx.region.width, h: ctx.region.height };
 }

@@ -1,11 +1,310 @@
 /**
- * Presets for R2 §33–§42 (table 3-5; table 3-6 empty rows).
+ * Presets for R2 §33–§42 (table 3-5, metamorphic rocks) and the no-pattern rows of table 3-5.
  * Owner: preset-3 (stage 1). Rules: docs/CONVENTIONS.md §6 (ids), §10 (presets).
  *
- * One object per preset. Every value comes from the cited report section; never invent one.
- * Unmeasured values: null + provenance.measured = false. Aliases carry only head fields + aliasOf.
- * Empty until stage 1 fills it; presets/index.js reports the count per file.
+ * One object per preset. Every value comes from the cited report section (provenance.section);
+ * values not in the report are never written. Unmeasured values: null + provenance.measured = false.
+ * Empty rows: layers = [{id: 'none', archetype: 'empty'}]. Table 3-6 has no pattern and is not here.
  */
 
 /** @type {import('../core/types.js').PatternSpec[]} */
-export const PRESETS = [];
+export const PRESETS = [
+  {
+    schema: 'zc-pattern/1.0.0',
+    id: 'zc:311010000',
+    table: '3-5',
+    code: '311010000',
+    names: { ja: '片岩' },
+    provenance: { doc: 'R2', section: '表3-5 模様なし行', measured: true, notes: 'no pattern; confirmed by PDF rendering (R2)' },
+    layers: [{ id: 'none', archetype: 'empty' }],
+  },
+  {
+    schema: 'zc-pattern/1.0.0',
+    id: 'zc:311020000',
+    table: '3-5',
+    code: '311020000',
+    symbol: 'Gn',
+    names: { ja: '片麻岩' },
+    provenance: {
+      doc: 'R2',
+      section: '§33',
+      measured: true,
+      notes: 'lineSpacing 9.72 = horizontal intercept 13.75 x sin45 (CONVENTIONS §2). amplitude 1.0 = design value inside the measured range 0.82-1.15. wavelength 8.5 = 1 period 8.4-8.6. doubleGap 0.93 = median of 0.42-1.11. The 10 connected lines (5 pairs) are not expressible as a line count; left to auto.',
+    },
+    layers: [{
+      id: 'waves',
+      archetype: 'wave',
+      params: { angle: 45, wavelength: 8.5, amplitude: 1.0, lineSpacing: 9.72, doubleGap: 0.93 },
+    }],
+  },
+  {
+    schema: 'zc-pattern/1.0.0',
+    id: 'zc:311030000',
+    table: '3-5',
+    code: '311030000',
+    names: { ja: 'グラノフェルス' },
+    provenance: { doc: 'R2', section: '表3-5 模様なし行', measured: true, notes: 'no pattern; confirmed by PDF rendering (R2)' },
+    layers: [{ id: 'none', archetype: 'empty' }],
+  },
+  {
+    schema: 'zc-pattern/1.0.0',
+    id: 'zc:312040000',
+    table: '3-5',
+    code: '312040000',
+    names: { ja: 'ミグマタイト' },
+    provenance: { doc: 'R2', section: '表3-5 模様なし行', measured: true, notes: 'no pattern; confirmed by PDF rendering (R2)' },
+    layers: [{ id: 'none', archetype: 'empty' }],
+  },
+  {
+    schema: 'zc-pattern/1.0.0',
+    id: 'zc:312010000',
+    table: '3-5',
+    code: '312010000',
+    symbol: 'Sl',
+    names: { ja: '粘板岩' },
+    provenance: {
+      doc: 'R2',
+      section: '§34',
+      measured: true,
+      notes: 'spacing 4.24 = mean of 5 row gaps (4.09, 4.34, 4.33, 4.34, 4.09; unequal). margin left 2.85 / right 2.61 from the line extent 2.85-53.42. Not expressed: count 6 and the first line at y 2.89 (hatch has no count or vertical placement; offset +1.41 would place the first line, not applied).',
+    },
+    layers: [{
+      id: 'lines',
+      archetype: 'hatch',
+      params: { angle: 0, spacing: 4.24, margin: { left: 2.85, right: 2.61 } },
+    }],
+  },
+  {
+    schema: 'zc-pattern/1.0.0',
+    id: 'zc:312020000',
+    table: '3-5',
+    code: '312020000',
+    symbol: 'Ph',
+    names: { ja: '千枚岩' },
+    provenance: {
+      doc: 'R2',
+      section: '§35',
+      measured: true,
+      notes: 'trapezoid wave. lineSpacing 7.06 = mean of 3 row gaps (6.99, 7.22, 6.98; unequal). wavelength 19.6 = mean of 19.47-19.71. margin 2.85 (x = 2.85 to 53.18). 4 lines, all in phase.',
+    },
+    layers: [{
+      id: 'waves',
+      archetype: 'wave',
+      params: {
+        angle: 0,
+        waveform: 'trapezoid',
+        flat: 7.0,
+        rampDx: 2.85,
+        rampDy: 2.89,
+        wavelength: 19.6,
+        amplitude: 2.89,
+        lineSpacing: 7.06,
+        lines: 4,
+        margin: 2.85,
+        phase: 0,
+      },
+    }],
+  },
+  {
+    schema: 'zc-pattern/1.0.0',
+    id: 'zc:312030000',
+    table: '3-5',
+    code: '312030000',
+    symbol: 'Hr',
+    names: { ja: 'ホルンフェルス' },
+    provenance: {
+      doc: 'R2',
+      section: '§36',
+      measured: true,
+      notes: 'layer 1 = wave with the parameters of the quartz schist (§37). layer 2 = dot grid: pitchX 13.87 (13.75-13.99), pitchY 4.09 (mean of 5 row gaps), odd-row shift -4.1 pt, 6 rows x 4 dots. dot d 1.3 = centre of the measured 1.17-1.40.',
+    },
+    layers: [
+      {
+        id: 'waves',
+        archetype: 'wave',
+        params: { angle: 45, wavelength: 8.5, amplitude: 1.0, lineSpacing: 9.72, doubleGap: 0 },
+      },
+      {
+        id: 'dots',
+        archetype: 'grid',
+        params: { pitchX: 13.87, pitchY: 4.09, rowOffset: { pt: -4.1 }, rows: 6, cols: 4 },
+        motif: { kind: 'dot', d: 1.3 },
+      },
+    ],
+  },
+  {
+    schema: 'zc-pattern/1.0.0',
+    id: 'zc:312150000',
+    table: '3-5',
+    code: '312150000',
+    symbol: 'Qsct',
+    names: { ja: '石英片岩' },
+    provenance: {
+      doc: 'R2',
+      section: '§37',
+      measured: true,
+      notes: 'single wave line. lineSpacing 9.72 = 13.75 x sin45 (horizontal intercept converted to perpendicular distance). wavelength 8.5 and amplitude 1.0 as in §33.',
+    },
+    layers: [{
+      id: 'waves',
+      archetype: 'wave',
+      params: { angle: 45, wavelength: 8.5, amplitude: 1.0, lineSpacing: 9.72, doubleGap: 0 },
+    }],
+  },
+  {
+    schema: 'zc-pattern/1.0.0',
+    id: 'zc:312160000',
+    table: '3-5',
+    code: '312160000',
+    symbol: 'Bsct',
+    names: { ja: '黒色片岩' },
+    provenance: {
+      doc: 'R2',
+      section: '§38',
+      measured: true,
+      notes: 'layer 1 = single wave (as §37). layer 2 = horizontal hatch, spacing 4.09 = mean of 5 row gaps (4.14, 4.14, 4.14, 4.13, 3.91; unequal; the design value 4.13 is the first four gaps). Line length = full frame width (margin 0). The 6 lines are not expressible as a count.',
+    },
+    layers: [
+      {
+        id: 'waves',
+        archetype: 'wave',
+        params: { angle: 45, wavelength: 8.5, amplitude: 1.0, lineSpacing: 9.72, doubleGap: 0 },
+      },
+      {
+        id: 'lines',
+        archetype: 'hatch',
+        params: { angle: 0, spacing: 4.09 },
+      },
+    ],
+  },
+  {
+    schema: 'zc-pattern/1.0.0',
+    id: 'zc:312050000',
+    table: '3-5',
+    code: '312050000',
+    symbol: 'Gsct',
+    names: { ja: '緑色片岩' },
+    provenance: {
+      doc: 'R2',
+      section: '§39',
+      measured: true,
+      notes: 'layer 1 = double wave (doubleGap 0.93, as §33). layer 2 = horizontal hatch, spacing 4.10 = mean of 5 row gaps (3.92, 4.15, 4.14, 4.15, 4.15; unequal). Line length = full frame width (margin 0). The 6 lines are not expressible as a count.',
+    },
+    layers: [
+      {
+        id: 'waves',
+        archetype: 'wave',
+        params: { angle: 45, wavelength: 8.5, amplitude: 1.0, lineSpacing: 9.72, doubleGap: 0.93 },
+      },
+      {
+        id: 'lines',
+        archetype: 'hatch',
+        params: { angle: 0, spacing: 4.10 },
+      },
+    ],
+  },
+  {
+    schema: 'zc-pattern/1.0.0',
+    id: 'zc:312060000',
+    table: '3-5',
+    code: '312060000',
+    symbol: 'Amp',
+    names: { ja: '角閃岩' },
+    provenance: {
+      doc: 'R2',
+      section: '§40',
+      measured: true,
+      notes: 'chevron opening left (">"), width 5.70, depth 5.66 (height 5.54-5.78). pitchY 5.70 = mean of 3 row gaps (5.66, 5.78, 5.65; unequal). pitchX 16.86. 4 rows x 3 per row; odd rows shifted by 0.5 pitchX.',
+    },
+    layers: [{
+      id: 'chevrons',
+      archetype: 'grid',
+      params: { pitchX: 16.86, pitchY: 5.70, rowOffset: 0.5, rows: 4, cols: 3 },
+      motif: { kind: 'chevron', width: 5.70, depth: 5.66, open: 'left' },
+    }],
+  },
+  {
+    schema: 'zc-pattern/1.0.0',
+    id: 'zc:312070000',
+    table: '3-5',
+    code: '312070000',
+    names: { ja: 'エクロジャイト' },
+    provenance: { doc: 'R2', section: '表3-5 模様なし行', measured: true, notes: 'no pattern; confirmed by PDF rendering (R2)' },
+    layers: [{ id: 'none', archetype: 'empty' }],
+  },
+  {
+    schema: 'zc-pattern/1.0.0',
+    id: 'zc:312080000',
+    table: '3-5',
+    code: '312080000',
+    names: { ja: 'グラニュライト' },
+    provenance: { doc: 'R2', section: '表3-5 模様なし行', measured: true, notes: 'no pattern; confirmed by PDF rendering (R2)' },
+    layers: [{ id: 'none', archetype: 'empty' }],
+  },
+  {
+    schema: 'zc-pattern/1.0.0',
+    id: 'zc:312090000',
+    table: '3-5',
+    code: '312090000',
+    names: { ja: '石灰珪質岩' },
+    provenance: { doc: 'R2', section: '表3-5 模様なし行', measured: true, notes: 'no pattern; confirmed by PDF rendering (R2)' },
+    layers: [{ id: 'none', archetype: 'empty' }],
+  },
+  {
+    schema: 'zc-pattern/1.0.0',
+    id: 'zc:312110000',
+    table: '3-5',
+    code: '312110000',
+    symbol: 'Mb',
+    names: { ja: '大理石' },
+    provenance: {
+      doc: 'R2',
+      section: '§41',
+      measured: true,
+      notes: 'brick field rotated 45 (the joints at 134.6 are 89.2 from the 45.4 course lines, read as 90). courseHeight 4.95 = perpendicular distance between course lines (horizontal 7.0). brickLength 9.97 = joint spacing along a course, sqrt(7.0^2 + 7.1^2). stagger 0.5 = half-brick shift. jointInset 0.3 measured. Lines clipped at the frame.',
+    },
+    layers: [{
+      id: 'brick',
+      archetype: 'brick',
+      params: { angle: 45, courseHeight: 4.95, brickLength: 9.97, stagger: 0.5, jointInset: 0.3 },
+    }],
+  },
+  {
+    schema: 'zc-pattern/1.0.0',
+    id: 'zc:312120000',
+    table: '3-5',
+    code: '312120000',
+    names: { ja: '珪岩' },
+    provenance: { doc: 'R2', section: '表3-5 模様なし行', measured: true, notes: 'no pattern; confirmed by PDF rendering (R2)' },
+    layers: [{ id: 'none', archetype: 'empty' }],
+  },
+  {
+    schema: 'zc-pattern/1.0.0',
+    id: 'zc:312130000',
+    table: '3-5',
+    code: '312130000',
+    symbol: 'Sp',
+    names: { ja: '蛇紋岩' },
+    provenance: {
+      doc: 'R2',
+      section: '§42',
+      measured: true,
+      notes: 'glyph "卄": 1 horizontal stroke 8.43 (8.31-8.55), 2 vertical strokes 5.66 (5.54-5.78) with centre gap 2.85. pitchX 22.49 (22.43-22.55). pitchY 8.43 = mean of row-centre gaps (8.43, 8.42); the design value 8.49 is the midpoint of the reported range 8.42-8.55. Row counts 3,2,3 are not expressible with cols auto.',
+    },
+    layers: [{
+      id: 'glyphs',
+      archetype: 'grid',
+      params: { pitchX: 22.49, pitchY: 8.43, rowOffset: 0.5, rows: 3 },
+      motif: { kind: 'lineGlyph', hLines: 1, hLen: 8.43, vLines: 2, vLen: 5.66, vGap: 2.85 },
+    }],
+  },
+  {
+    schema: 'zc-pattern/1.0.0',
+    id: 'zc:312140000',
+    table: '3-5',
+    code: '312140000',
+    names: { ja: 'スカルン' },
+    provenance: { doc: 'R2', section: '表3-5 模様なし行', measured: true, notes: 'no pattern; confirmed by PDF rendering (R2)' },
+    layers: [{ id: 'none', archetype: 'empty' }],
+  },
+];

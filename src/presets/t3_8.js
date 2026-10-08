@@ -1,11 +1,201 @@
 /**
- * Presets for R2 §54–§61 (table 3-8).
+ * Presets for R2 §54–§61 (table 3-8, other rocks: voids, rock grades, veins) and its no-pattern rows.
  * Owner: preset-3 (stage 1). Rules: docs/CONVENTIONS.md §6 (ids), §10 (presets).
  *
- * One object per preset. Every value comes from the cited report section; never invent one.
- * Unmeasured values: null + provenance.measured = false. Aliases carry only head fields + aliasOf.
- * Empty until stage 1 fills it; presets/index.js reports the count per file.
+ * One object per preset. Every value comes from the cited report section (provenance.section);
+ * values not in the report are never written. Unmeasured values: null + provenance.measured = false.
+ * Aliases carry only head fields + aliasOf (same drawing as the canonical preset named in aliasOf).
+ * Empty rows: layers = [{id: 'none', archetype: 'empty'}].
  */
 
 /** @type {import('../core/types.js').PatternSpec[]} */
-export const PRESETS = [];
+export const PRESETS = [
+  {
+    schema: 'zc-pattern/1.0.0',
+    id: 'zc:999010001',
+    table: '3-8',
+    code: '999010001',
+    symbol: 'CV',
+    names: { ja: '空洞' },
+    provenance: { doc: 'R2', section: '§54', measured: true, notes: 'frame only, black 0.2 pt; frame 56.44 x 28.62 as in §55-§58' },
+    frame: { width: 56.44, height: 28.62, show: 'ink' },
+    stroke: { width: 0.2 },
+    layers: [{ id: 'none', archetype: 'empty' }],
+  },
+  {
+    schema: 'zc-pattern/1.0.0',
+    id: 'zc:999010002',
+    table: '3-8',
+    code: '999010002',
+    symbol: 'HR',
+    names: { ja: '硬岩' },
+    provenance: {
+      doc: 'R2',
+      section: '§55',
+      measured: true,
+      notes: '13 vertical lines, spacing 4.24 (13 lines = 12 x 4.24 across 50.9 pt). Line extent y 2.82-25.80 gives margin top and bottom 2.82. Left 2.78 and right 2.79 come from the line positions of §56 (first line x 2.78, last 53.65). The 13-line count is not expressible in hatch.',
+    },
+    frame: { width: 56.44, height: 28.62, show: 'ink' },
+    stroke: { width: 0.2 },
+    layers: [{
+      id: 'lines',
+      archetype: 'hatch',
+      params: { angle: 90, spacing: 4.24, margin: { left: 2.78, right: 2.79, top: 2.82, bottom: 2.82 } },
+    }],
+  },
+  {
+    schema: 'zc-pattern/1.0.0',
+    id: 'zc:999010003',
+    table: '3-8',
+    code: '999010003',
+    symbol: 'MR',
+    names: { ja: '中硬岩' },
+    provenance: {
+      doc: 'R2',
+      section: '§56',
+      measured: true,
+      notes: 'solid and dashed lines alternate (7 solid + 6 dashed = 13). Spacing 4.24 between adjacent lines (8.48 between solid lines). Dash 4.23, gap 2.2 (2.0-2.4). The report draws dashes as separate segments; dash/gap express the same. Margins as §55.',
+    },
+    frame: { width: 56.44, height: 28.62, show: 'ink' },
+    stroke: { width: 0.2 },
+    layers: [{
+      id: 'lines',
+      archetype: 'hatch',
+      params: {
+        angle: 90,
+        spacing: 4.24,
+        cycle: ['solid', 'dashed'],
+        dash: 4.23,
+        gap: 2.2,
+        margin: { left: 2.78, right: 2.79, top: 2.82, bottom: 2.82 },
+      },
+    }],
+  },
+  {
+    schema: 'zc-pattern/1.0.0',
+    id: 'zc:999010004',
+    table: '3-8',
+    code: '999010004',
+    symbol: 'WR',
+    names: { ja: '軟岩' },
+    provenance: {
+      doc: 'R2',
+      section: '§57',
+      measured: true,
+      notes: '13 dashed vertical lines. Dash 4.23, gap 2.2 (2.0-2.4), spacing 4.24. Margins as §55 (the report gives the same frame and line extent).',
+    },
+    frame: { width: 56.44, height: 28.62, show: 'ink' },
+    stroke: { width: 0.2 },
+    layers: [{
+      id: 'lines',
+      archetype: 'hatch',
+      params: {
+        angle: 90,
+        spacing: 4.24,
+        cycle: ['dashed'],
+        dash: 4.23,
+        gap: 2.2,
+        margin: { left: 2.78, right: 2.79, top: 2.82, bottom: 2.82 },
+      },
+    }],
+  },
+  {
+    schema: 'zc-pattern/1.0.0',
+    id: 'zc:999010005',
+    table: '3-8',
+    code: '999010005',
+    symbol: 'WR',
+    names: { ja: '風化岩' },
+    provenance: { doc: 'R2', section: '§58', measured: true, notes: 'same geometry as 軟岩 (§57); the coordinates agree within 0.05 pt' },
+    aliasOf: 'zc:999010004',
+  },
+  {
+    schema: 'zc-pattern/1.0.0',
+    id: 'zc:999020005',
+    table: '3-8',
+    code: '999020005',
+    names: { ja: 'シーム' },
+    provenance: { doc: 'R2', section: '表3-8 模様なし行', measured: true, notes: 'no pattern; confirmed by PDF rendering (R2)' },
+    layers: [{ id: 'none', archetype: 'empty' }],
+  },
+  {
+    schema: 'zc-pattern/1.0.0',
+    id: 'zc:999030001',
+    table: '3-8',
+    code: '999030001',
+    names: { ja: '鉱物脈' },
+    provenance: { doc: 'R2', section: '表3-8 模様なし行 (参照: §59)', measured: true, notes: 'no pattern of its own; the report says to use the 鉱物脈 single symbol shared by 石英脈, 沸石脈 and 方解石脈 (§59-§61)' },
+    aliasOf: 'zc:999030002',
+  },
+  {
+    schema: 'zc-pattern/1.0.0',
+    id: 'zc:999030002',
+    table: '3-8',
+    code: '999030002',
+    symbol: 'Qz',
+    names: { ja: '石英脈' },
+    provenance: {
+      doc: 'R2',
+      section: '§59',
+      measured: true,
+      notes: 'single symbol, not tiled. Two S-curves with chord 28.01 x 16.37-16.61 (16.49 mean); the second is the first moved by (+6.41, +6.98). 6 rungs, length 8.21-9.58, roughly perpendicular to the curves. Centre offset x -1.8 (content centre 26.2 vs frame centre 28.0). The vein coordinates are not copied; they are rebuilt from the dimensions (design §1.4 b2).',
+    },
+    layers: [{
+      id: 'vein',
+      archetype: 'symbol',
+      params: { anchor: 'center', offsets: [{ x: -1.8, y: 0 }] },
+      motif: {
+        kind: 'vein',
+        chord: 28.01,
+        height: 16.49,
+        secondOffset: { x: 6.41, y: 6.98 },
+        rungs: 6,
+        rungLengthMin: 8.21,
+        rungLengthMax: 9.58,
+      },
+    }],
+  },
+  {
+    schema: 'zc-pattern/1.0.0',
+    id: 'zc:999030003',
+    table: '3-8',
+    code: '999030003',
+    symbol: 'Ze',
+    names: { ja: '沸石脈' },
+    provenance: { doc: 'R2', section: '§60', measured: true, notes: 'same geometry as 石英脈 (§59); the coordinates agree within 0.05 pt' },
+    aliasOf: 'zc:999030002',
+  },
+  {
+    schema: 'zc-pattern/1.0.0',
+    id: 'zc:999030004',
+    table: '3-8',
+    code: '999030004',
+    names: { ja: '緑泥石脈' },
+    provenance: { doc: 'R2', section: '表3-8 模様なし行 (参照: §59)', measured: true, notes: 'no pattern of its own; the report says to use the 鉱物脈 single symbol (石英脈 geometry)' },
+    aliasOf: 'zc:999030002',
+  },
+  {
+    schema: 'zc-pattern/1.0.0',
+    id: 'zc:999030005',
+    table: '3-8',
+    code: '999030005',
+    symbol: 'Ca',
+    names: { ja: '方解石脈' },
+    provenance: { doc: 'R2', section: '§61', measured: true, notes: 'same geometry as 石英脈 (§59); the coordinates agree within 0.05 pt' },
+    aliasOf: 'zc:999030002',
+  },
+  {
+    schema: 'zc-pattern/1.0.0',
+    id: 'zc:999040001',
+    table: '3-8',
+    code: '999040001',
+    names: { ja: '岩盤' },
+    provenance: {
+      doc: 'R2',
+      section: '表3-8 模様なし行',
+      measured: true,
+      notes: 'no pattern; the remark is the classification under 建築基準法施行令第93条 (not a pattern reference); confirmed by PDF rendering (R2)',
+    },
+    layers: [{ id: 'none', archetype: 'empty' }],
+  },
+];

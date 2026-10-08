@@ -1,11 +1,253 @@
 /**
- * Presets for R2 §43–§53 (table 3-7).
+ * Presets for R2 §43–§53 (table 3-7, other rocks) and the no-pattern rows of table 3-7.
  * Owner: preset-3 (stage 1). Rules: docs/CONVENTIONS.md §6 (ids), §10 (presets).
  *
- * One object per preset. Every value comes from the cited report section; never invent one.
- * Unmeasured values: null + provenance.measured = false. Aliases carry only head fields + aliasOf.
- * Empty until stage 1 fills it; presets/index.js reports the count per file.
+ * One object per preset. Every value comes from the cited report section (provenance.section);
+ * values not in the report are never written. Unmeasured values: null + provenance.measured = false.
+ * Aliases carry only head fields + aliasOf (same drawing as the canonical preset named in aliasOf).
+ * Empty rows: layers = [{id: 'none', archetype: 'empty'}].
+ * Not included: 固結シルト (599100001). Its pattern is "シルト" (table 4-1), an open question (design §10-14).
  */
 
 /** @type {import('../core/types.js').PatternSpec[]} */
-export const PRESETS = [];
+export const PRESETS = [
+  {
+    schema: 'zc-pattern/1.0.0',
+    id: 'zc:199100001',
+    table: '3-7',
+    code: '199100001',
+    symbol: 'Are',
+    names: { ja: '砂質岩' },
+    provenance: {
+      doc: 'R2',
+      section: '§43',
+      measured: true,
+      notes: 'dot d 1.3 = centre of the measured 1.19-1.43 (width) and 1.20-1.45 (height). pitchX 9.62 (9.49-9.74). pitchY 4.26 = mean of 5 row gaps (4.13, 4.42, 4.15, 4.28, 4.34; unequal). Rows of 6 and 5 alternate; the count per row is not expressible with cols auto.',
+    },
+    layers: [{
+      id: 'dots',
+      archetype: 'grid',
+      params: { pitchX: 9.62, pitchY: 4.26, rowOffset: 0.5, rows: 6 },
+      motif: { kind: 'dot', d: 1.3 },
+    }],
+  },
+  {
+    schema: 'zc-pattern/1.0.0',
+    id: 'zc:199100002',
+    table: '3-7',
+    code: '199100002',
+    symbol: 'Ak',
+    names: { ja: 'アルコース' },
+    provenance: {
+      doc: 'R2',
+      section: '§44',
+      measured: true,
+      notes: 'layer 1 = dot grid as §43. layer 2 = 6 short lines in two direction classes: 3 at 27.4 (6.18-6.39) and 3 at -44.5 (5.58-5.75). scatter has one length, so the median of the 6 lengths (5.97) is used with lengthJitter 0.4 (half of the 5.58-6.39 range). The fixed coordinates of the report are not copied.',
+    },
+    layers: [
+      {
+        id: 'dots',
+        archetype: 'grid',
+        params: { pitchX: 9.62, pitchY: 4.26, rowOffset: 0.5, rows: 6 },
+        motif: { kind: 'dot', d: 1.3 },
+      },
+      {
+        id: 'shortLines',
+        archetype: 'scatter',
+        params: {
+          count: 6,
+          length: 5.97,
+          lengthJitter: 0.4,
+          angles: [{ deg: 27.4, weight: 0.5 }, { deg: -44.5, weight: 0.5 }],
+        },
+      },
+    ],
+  },
+  {
+    schema: 'zc-pattern/1.0.0',
+    id: 'zc:199100003',
+    table: '3-7',
+    code: '199100003',
+    symbol: 'Gwk',
+    names: { ja: 'グレイワッケ' },
+    provenance: { doc: 'R2', section: '§45', measured: true, notes: 'same geometry as アルコース (§44); the coordinates agree within 0.05 pt' },
+    aliasOf: 'zc:199100002',
+  },
+  {
+    schema: 'zc-pattern/1.0.0',
+    id: 'zc:199100004',
+    table: '3-7',
+    code: '199100004',
+    symbol: 'Arg',
+    names: { ja: '泥質岩' },
+    provenance: {
+      doc: 'R2',
+      section: '§46',
+      measured: true,
+      notes: 'hline 8.43 (8.31-8.55). pitchX 12.64 (12.34-12.94). pitchY 8.43 = mean of 2 row gaps (8.43, 8.42). The odd-row shift is 4.75 pt, about 0.37 pitchX, not one half, so it is given in pt. The right end of row 2 reaches the frame edge; edgeMode clip.',
+    },
+    layers: [{
+      id: 'lines',
+      archetype: 'grid',
+      params: { pitchX: 12.64, pitchY: 8.43, rowOffset: { pt: 4.75 }, rows: 3, edgeMode: 'clip' },
+      motif: { kind: 'hline', length: 8.43 },
+    }],
+  },
+  {
+    schema: 'zc-pattern/1.0.0',
+    id: 'zc:299100001',
+    table: '3-7',
+    code: '299100001',
+    names: { ja: '斑岩' },
+    provenance: { doc: 'R2', section: '表3-7 模様なし行 (参照: §47)', measured: true, notes: 'no pattern of its own; the report says to use the 斑岩 pattern shared by 石英斑岩, 花崗斑岩, 文象斑岩 and 珪長岩 (§47-§52)' },
+    aliasOf: 'zc:299100002',
+  },
+  {
+    schema: 'zc-pattern/1.0.0',
+    id: 'zc:299100002',
+    table: '3-7',
+    code: '299100002',
+    symbol: 'Qp',
+    names: { ja: '石英斑岩' },
+    provenance: {
+      doc: 'R2',
+      section: '§47',
+      measured: true,
+      notes: 'parallelPair 7.1 long, 2.80 apart, 4 directions. pitchX 19.70 (2 x 9.85 column spacing), pitchY 5.66 (the full sequence repeats at 11.32), rowOffset 0.5. Rotations: even rows [30, 150], odd rows [120, 60] (design §1.5.6). The 10 pairs at fixed centres are not copied.',
+    },
+    layers: [{
+      id: 'pairs',
+      archetype: 'grid',
+      params: { pitchX: 19.70, pitchY: 5.66, rowOffset: 0.5, rows: 4, rotations: [[30, 150], [120, 60]] },
+      motif: { kind: 'parallelPair', length: 7.1, gap: 2.8, rotation: 0 },
+    }],
+  },
+  {
+    schema: 'zc-pattern/1.0.0',
+    id: 'zc:299100003',
+    table: '3-7',
+    code: '299100003',
+    symbol: 'Gp',
+    names: { ja: '花崗斑岩' },
+    provenance: { doc: 'R2', section: '§48', measured: true, notes: 'same geometry as 石英斑岩 (§47); the coordinates agree within 0.05 pt' },
+    aliasOf: 'zc:299100002',
+  },
+  {
+    schema: 'zc-pattern/1.0.0',
+    id: 'zc:299100004',
+    table: '3-7',
+    code: '299100004',
+    symbol: 'Gph',
+    names: { ja: '文象斑岩' },
+    provenance: { doc: 'R2', section: '§49', measured: true, notes: 'same geometry as 石英斑岩 (§47); the coordinates agree within 0.05 pt' },
+    aliasOf: 'zc:299100002',
+  },
+  {
+    schema: 'zc-pattern/1.0.0',
+    id: 'zc:299100005',
+    table: '3-7',
+    code: '299100005',
+    symbol: 'Ap',
+    names: { ja: 'アプライト' },
+    provenance: {
+      doc: 'R2',
+      section: '§50',
+      measured: true,
+      notes: 'cross glyph: horizontal 5.58 (arms 2.85 / 2.61; the report centre is 0.12 off the glyph centre, not expressed), vertical 5.66. pitchX 16.74 (16.62-16.86). pitchY 7.06 = mean of 3 row gaps (6.99, 7.22, 6.98; unequal; the design value 7.10 is the midpoint of 6.98-7.22). Rows of 4 and 3 alternate.',
+    },
+    layers: [{
+      id: 'crosses',
+      archetype: 'grid',
+      params: { pitchX: 16.74, pitchY: 7.06, rowOffset: 0.5, rows: 4 },
+      motif: { kind: 'lineGlyph', hLines: 1, hLen: 5.58, vLines: 1, vLen: 5.66 },
+    }],
+  },
+  {
+    schema: 'zc-pattern/1.0.0',
+    id: 'zc:299100006',
+    table: '3-7',
+    code: '299100006',
+    names: { ja: '花崗閃緑斑岩' },
+    provenance: { doc: 'R2', section: '表3-7 模様なし行 (参照: §47)', measured: true, notes: 'no pattern of its own; the report says to use the 斑岩 pattern (石英斑岩 geometry)' },
+    aliasOf: 'zc:299100002',
+  },
+  {
+    schema: 'zc-pattern/1.0.0',
+    id: 'zc:299100007',
+    table: '3-7',
+    code: '299100007',
+    names: { ja: '石英閃緑斑岩' },
+    provenance: { doc: 'R2', section: '表3-7 模様なし行 (参照: §47)', measured: true, notes: 'no pattern of its own; the report says to use the 斑岩 pattern (石英斑岩 geometry)' },
+    aliasOf: 'zc:299100002',
+  },
+  {
+    schema: 'zc-pattern/1.0.0',
+    id: 'zc:299100008',
+    table: '3-7',
+    code: '299100008',
+    symbol: 'Po',
+    names: { ja: 'ひん岩' },
+    provenance: {
+      doc: 'R2',
+      section: '§51',
+      measured: true,
+      notes: 'T glyph: horizontal 8.43 (8.31-8.55), vertical 5.66 hanging from the bar (vAnchor top). pitchX 22.49 (22.43-22.55). pitchY 8.55 = mean of 2 row gaps (8.43, 8.67; unequal). Rows of 3 and 2 alternate.',
+    },
+    layers: [{
+      id: 'tees',
+      archetype: 'grid',
+      params: { pitchX: 22.49, pitchY: 8.55, rowOffset: 0.5, rows: 3 },
+      motif: { kind: 'lineGlyph', hLines: 1, hLen: 8.43, vLines: 1, vLen: 5.66, vAnchor: 'top' },
+    }],
+  },
+  {
+    schema: 'zc-pattern/1.0.0',
+    id: 'zc:299100009',
+    table: '3-7',
+    code: '299100009',
+    names: { ja: 'ペグマタイト' },
+    provenance: { doc: 'R2', section: '表3-7 模様なし行', measured: true, notes: 'no pattern; confirmed by PDF rendering (R2)' },
+    layers: [{ id: 'none', archetype: 'empty' }],
+  },
+  {
+    schema: 'zc-pattern/1.0.0',
+    id: 'zc:299100010',
+    table: '3-7',
+    code: '299100010',
+    symbol: 'Fel',
+    names: { ja: '珪長岩' },
+    provenance: { doc: 'R2', section: '§52', measured: true, notes: 'same geometry as 石英斑岩 (§47); the coordinates agree within 0.05 pt' },
+    aliasOf: 'zc:299100002',
+  },
+  {
+    schema: 'zc-pattern/1.0.0',
+    id: 'zc:299100011',
+    table: '3-7',
+    code: '299100011',
+    names: { ja: '真珠岩' },
+    provenance: { doc: 'R2', section: '表3-7 模様なし行', measured: true, notes: 'no pattern; confirmed by PDF rendering (R2)' },
+    layers: [{ id: 'none', archetype: 'empty' }],
+  },
+  {
+    schema: 'zc-pattern/1.0.0',
+    id: 'zc:599100002',
+    table: '3-7',
+    code: '599100002',
+    symbol: 'Cc',
+    names: { ja: '固結粘土' },
+    provenance: {
+      doc: 'R2',
+      section: '§53',
+      measured: true,
+      notes: 'frame 56.44 x 28.62 drawn in black, line width 0.2 (overrides the rock defaults). hline 5.66 (5.56-5.76). pitchX 8.50 (8.44-8.55). pitchY 4.31 = mean of 5 row gaps (4.24, 4.43, 4.23, 4.24, 4.43; unequal). 6 rows x 6, odd rows shifted by 0.5 pitchX.',
+    },
+    frame: { width: 56.44, height: 28.62, show: 'ink' },
+    stroke: { width: 0.2 },
+    layers: [{
+      id: 'lines',
+      archetype: 'grid',
+      params: { pitchX: 8.50, pitchY: 4.31, rowOffset: 0.5, rows: 6, cols: 6 },
+      motif: { kind: 'hline', length: 5.66 },
+    }],
+  },
+];

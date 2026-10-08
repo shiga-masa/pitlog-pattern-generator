@@ -1,0 +1,104 @@
+/*
+ * Preset picker styles (site/app/ui/presetPicker.js). Owner: app-2.
+ * Two colours only (--earth, --white), solid rules, no radius, shadow, opacity or italics.
+ * Hierarchy: size and weight; a selected row or tab is shown by inverting the two colours.
+ */
+
+.pk {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.pk-label {
+  font-weight: 700;
+  font-size: 0.875rem;
+  display: grid;
+  gap: 6px;
+}
+
+.pk-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pk-tab {
+  width: auto;
+  font-weight: 400;
+  font-size: 0.875rem;
+  padding: 4px 10px;
+}
+
+.pk-tab[aria-pressed="true"] {
+  background: var(--earth);
+  color: var(--white);
+  font-weight: 700;
+}
+
+.pk-search {
+  width: 100%;
+  font-size: 1rem;
+  padding: 8px 10px;
+}
+
+.pk-count {
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.pk-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 2px solid var(--earth);
+  max-height: 420px;
+  overflow-y: auto;
+  min-width: 0;
+}
+
+.pk-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font-weight: 400;
+  padding: 10px 8px;
+  border: 0;
+  border-bottom: 1px solid var(--earth);
+  overflow-wrap: anywhere;
+}
+
+.pk-item[aria-pressed="true"] {
+  background: var(--earth);
+  color: var(--white);
+}
+
+.pk-item[aria-pressed="true"] .pk-meta {
+  color: var(--white);
+}
+
+.pk-name {
+  display: block;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.pk-meta {
+  display: block;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.pk-empty {
+  font-size: 0.875rem;
+  padding: 8px 0;
+}
+
+.pk-error {
+  font-weight: 700;
+  font-size: 0.875rem;
+  border-left: 4px solid var(--earth);
+  padding-left: 8px;
+}
+
+[hidden] { display: none !important; }
