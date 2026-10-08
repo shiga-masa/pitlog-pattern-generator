@@ -37,7 +37,7 @@ export function safeNamePart(s) {
 
 /**
  * File stem of one catalogue row: `<code>_<name>`. The code is codeLabelOf(row) with ':' replaced
- * by '-' ('zc:t3-9:2' -> 't3-9-2'); the name is names.ja (the id when it has none). Both parts go
+ * by '-' ('zc:t3-9:2' -> 't3-9-2', 'zc:t4-3:-Sh' -> 't4-3--Sh'); the name is names.ja (the id when it has none). Both parts go
  * through safeNamePart.
  * @param {{id: string, names?: {ja?: string}}} row
  * @returns {string}
@@ -188,7 +188,7 @@ export function mountBulkExport(container, props) {
 
   const root = el('div', 'bulk');
   const buttons = el('div', 'bulk-buttons');
-  const start = el('button', 'bulk-start', `全 ${total} 件を ZIP で保存(SVG と PNG、既定設定)`);
+  const start = el('button', 'bulk-start', '全件ダウンロード');
   start.type = 'button';
   start.title = `検索の絞り込みに関係なく、カタログの全 ${total} 件を既定色 ${BULK_SETTINGS.ink} / ${BULK_SETTINGS.paper}、プリセット枠、PNG ${BULK_SETTINGS.dpi} dpi で書き出します`;
   const cancel = el('button', 'bulk-cancel', 'キャンセル');

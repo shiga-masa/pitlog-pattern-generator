@@ -132,7 +132,7 @@ mountCatalog(container, {
 - 並び順: `YOMI[id]` の先頭の読みをカタカナ→ひらがなに畳んだ文字列のコードポイント順。同じ読みは ID 順。読みの無い ID は捨てずに `console.warn` で列挙し、末尾に ID 順で置く。
 - 検索窓: 名称(ja/en)・読み(別読みを含む全要素)・記号・コード・ID。NFKC・小文字化・カタカナ→ひらがなで畳み、空白区切りの全語を含むもの(AND)。件数は「表示 N 件」(N は絞り込み後)とだけ出す。
 - 「表示 N 件」の横(`.cat-bar`)に一括 ZIP 出力(`mountBulkExport`, §4.5)を置く。渡すのは絞り込み前の全行(`buildCatalog().rows`)。
-- タイル: 模様の小さなプレビュー(`renderSVG(id, {})` = 既定色 #000000 / #ffffff、枠付き、IntersectionObserver で遅延描画)と名称。描画失敗はタイル内に理由を出し、console.error にも出す。
+- タイル: 模様の小さなプレビュー(`renderSVG(id, {})` = 既定色 #000000 / #ffffff、枠付き、IntersectionObserver で遅延描画)と名称、その下に 1 行でコード(`codeLabelOf(row)` = ID から `zc:` を除いただけの形。`111101002`、`t3-9:2`、`t4-3:-Sh`、`t5-3:13`)。コード行は折り返さず、文字数(`--code-len`)に応じてフォントを縮めてタイル幅に収める。描画失敗はタイル内に理由を出し、console.error にも出す。
 - `state.presetId` のタイルを選択状態(`aria-pressed="true"`)で表示。別名タイルから選んだときはそのタイルを選択状態にする。
 - 純粋関数(node:test 用、DOM 無し): `foldText`, `isBlankRow`, `partitionRows`, `readingsOf`, `primaryReading`, `sortByYomi`, `filterCatalog`, `searchTextOf`, `buildCatalog`。
 
@@ -182,10 +182,10 @@ mountExportPanel(container, {
 mountBulkExport(container, { rows })   // rows = カタログの全行(絞り込み前)。catalog.js が mount する
   -> { destroy() }
 ```
-- ボタン「全 N 件を ZIP で保存(SVG と PNG、既定設定)」。検索で絞り込み中でも **全件** を出す(ボタン表記に件数を明示)。
+- ボタン「全件ダウンロード」(件数・形式・設定などの付加文言は出さない)。検索で絞り込み中でも **全件** を出す。
 - 設定は固定の既定設定 `BULK_SETTINGS = {ink: '#000000', paper: '#ffffff', dpi: 300}`。寸法はプリセット枠(`size` を渡さない)。SVG は `renderSVG(id, {ink, paper})`、PNG は `renderPNG(id, {ink, paper, dpi: 300})`。詳細設定・state は読まない。
 - ZIP の中身は画像だけ: `svg/<コード>_<名称>.svg` と `png/<コード>_<名称>.png`(README や エラー一覧のファイルは入れない)。
-  - コード = `codeLabelOf(row)` の `:` を `-` に置換(`t3-9:2` → `t3-9-2`)。名称 = `names.ja`。両方の `/ \ : * ? " < > |` と制御文字を `_` に置換し、末尾の `.` と空白を削る(`safeNamePart`)。
+  - コード = `codeLabelOf(row)` の `:` を `-` に置換(`t3-9:2` → `t3-9-2`、`t4-3:-Sh` → `t4-3--Sh`)。名称 = `names.ja`。両方の `/ \ : * ? " < > |` と制御文字を `_` に置換し、末尾の `.` と空白を削る(`safeNamePart`)。
   - 大文字小文字を無視して同名になった後発の行には `_2`, `_3`… を付け、画面とコンソールに列挙する(現行 215 件では該当なし。テストで固定)。
   - ZIP のファイル名: `borehole-patterns_default_YYYYMMDD-HHMM.zip`(端末のローカル時刻)。
 - 1 件ずつ `await` し、各件の後に `setTimeout(0)` でイベントループへ返す。ボタン下に「書き出し中 n / N(名称)」を出す。「キャンセル」で次の件の前に止め、ZIP は作らない。

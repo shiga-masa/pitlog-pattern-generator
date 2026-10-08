@@ -147,23 +147,15 @@ export function buildCatalog(rows, yomi) {
 }
 
 /**
- * Code shown on the second line of a tile: the id without its 'zc:' prefix
- * ('zc:111101002' -> '111101002', 'zc:t3-9:2' -> 't3-9:2'). A symbol-form id, whose last
- * ':'-separated part is not a plain integer, shows that symbol part only ('zc:t4-3:-Co' -> '-Co').
+ * Code shown on the second line of a tile: the id without its 'zc:' prefix, for every id form
+ * ('zc:111101002' -> '111101002', 'zc:t3-9:2' -> 't3-9:2', 'zc:t4-3:-Sh' -> 't4-3:-Sh').
  * An id without the prefix is shown as it is.
  * @param {{id: string}} row
  * @returns {string}
  */
 export function codeLabelOf(row) {
   const id = String(row?.id ?? '');
-  if (!id.startsWith('zc:')) return id;
-  const rest = id.slice(3);
-  const parts = rest.split(':');
-  if (parts.length > 1) {
-    const last = parts[parts.length - 1];
-    if (last !== '' && !/^\d+$/.test(last)) return last;
-  }
-  return rest;
+  return id.startsWith('zc:') ? id.slice(3) : id;
 }
 
 /* ---------------------------------------------------------------------- DOM */

@@ -49,7 +49,7 @@ npm test        # = node --test "test/**/*.test.js"(Node 22 以上、依存な�
 
 ## サイト(GitHub Pages)
 
-カタログ上部の「全 N 件を ZIP で保存(SVG と PNG、既定設定)」で、カタログの全タイル(検索で絞り込み中でも全件)を既定設定(ink `#000000` / paper `#ffffff`、プリセット枠、PNG は 300 dpi)で `svg/<コード>_<名称>.svg` と `png/<コード>_<名称>.png` にした ZIP を保存できます。ZIP は依存なしの自前実装(`site/app/zip.js`、無圧縮)で、失敗した模様の件数と理由は画面に出ます(仕様は [site/app/ui/CONTRACT.md](site/app/ui/CONTRACT.md) §4.5)。
+カタログ上部の「全件ダウンロード」で、カタログの全タイル(検索で絞り込み中でも全件)を既定設定(ink `#000000` / paper `#ffffff`、プリセット枠、PNG は 300 dpi)で `svg/<コード>_<名称>.svg` と `png/<コード>_<名称>.png` にした ZIP を保存できます。ZIP は依存なしの自前実装(`site/app/zip.js`、無圧縮)で、失敗した模様の件数と理由は画面に出ます(仕様は [site/app/ui/CONTRACT.md](site/app/ui/CONTRACT.md) §4.5)。
 
 GitHub Pages ではリポジトリのルートを配信します(ビルド不要)。ルートの `index.html` から `site/` に移ります。`site/` は `../src/index.js` を相対 import するので、`src/` も同じ配信ルートに入っている必要があります。手元では、リポジトリのルートで `python3 -m http.server` を起動して `http://127.0.0.1:8000/site/` を開きます。
 

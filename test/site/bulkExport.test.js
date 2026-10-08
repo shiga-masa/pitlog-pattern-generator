@@ -24,7 +24,8 @@ test('safeNamePart replaces characters that file systems refuse', () => {
 test('fileStemOf joins the catalogue code (":" -> "-") and the Japanese name', () => {
   assert.equal(fileStemOf({ id: 'zc:111101002', names: { ja: '礫岩' } }), '111101002_礫岩');
   assert.equal(fileStemOf({ id: 'zc:t3-9:2', names: { ja: '帯' } }), 't3-9-2_帯');
-  assert.equal(fileStemOf({ id: 'zc:t4-3:-Sh', names: { ja: '貝殻混じり' } }), '-Sh_貝殻混じり');
+  assert.equal(fileStemOf({ id: 'zc:t4-3:-Sh', names: { ja: '貝殻混じり' } }), 't4-3--Sh_貝殻混じり');
+  assert.equal(fileStemOf({ id: 'zc:t5-3:13', names: { ja: '例' } }), 't5-3-13_例');
   assert.equal(fileStemOf({ id: 'zc:1', names: { ja: 'A/B?' } }), '1_A_B_');
   assert.equal(fileStemOf({ id: 'user:x' }), 'user-x_user_x');
 });

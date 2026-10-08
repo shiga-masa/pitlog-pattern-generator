@@ -70,7 +70,7 @@ const DATE = new Date(2026, 9, 9, 13, 45, 31); // local time
 
 const ENTRIES = [
   { name: 'svg/111101002_礫岩.svg', data: '<svg xmlns="http://www.w3.org/2000/svg"/>' },
-  { name: 'png/-Sh_貝殻混じり.png', data: new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0, 1, 2, 255]) },
+  { name: 'png/t4-3--Sh_貝殻混じり.png', data: new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0, 1, 2, 255]) },
   { name: 'empty.bin', data: new Uint8Array(0) },
   { name: 'buf.bin', data: new Uint8Array([1, 2, 3]).buffer },
 ];
@@ -189,7 +189,7 @@ test('the unzip command tests and extracts the archive byte for byte', { skip: h
     const x = spawnSync('unzip', ['-q', file, '-d', outDir], { encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8', LC_ALL: 'C.UTF-8' } });
     assert.equal(x.status, 0, x.stdout + x.stderr);
     assert.deepEqual(readdirSync(join(outDir, 'svg')), ['111101002_礫岩.svg']);
-    assert.deepEqual(readdirSync(join(outDir, 'png')), ['-Sh_貝殻混じり.png']);
+    assert.deepEqual(readdirSync(join(outDir, 'png')), ['t4-3--Sh_貝殻混じり.png']);
     for (const e of ENTRIES) {
       const want = typeof e.data === 'string' ? enc.encode(e.data) : new Uint8Array(e.data);
       assert.deepEqual(new Uint8Array(readFileSync(join(outDir, e.name))), want, e.name);
