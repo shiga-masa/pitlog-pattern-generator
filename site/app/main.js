@@ -138,14 +138,12 @@ setOutput(initial.output);
 
 let chosenRowId = null; // tile id the user clicked
 let chosenCanonical = null; // resolveId() of that tile
-let scrollToDetail = initial.presetId !== null;
 
 const catalog = mountCatalog(catalogBox, {
   state: getState(),
   onSelect: (canonicalId, rowId) => {
     chosenRowId = rowId;
     chosenCanonical = canonicalId;
-    scrollToDetail = true;
     if (canonicalId === getState().presetId) render(getState());
     else guard('input', () => selectPreset(canonicalId));
   },
@@ -256,10 +254,6 @@ function renderDetail(state) {
     parts.push(`別名(= ${target?.names?.ja ?? row.aliasOf})`);
   }
   detailMeta.textContent = parts.join(' · ');
-  if (scrollToDetail) {
-    scrollToDetail = false;
-    detail.scrollIntoView({ block: 'start' });
-  }
 }
 
 /* ---------- render loop ---------- */
