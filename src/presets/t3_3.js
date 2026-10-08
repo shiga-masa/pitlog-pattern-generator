@@ -52,11 +52,19 @@ export const PRESETS = [
   {
     schema: 'zc-pattern/1.0.0', id: 'zc:219122200', table: '3-3', code: '219122200', symbol: 'Gr',
     names: { ja: '花崗岩' },
-    provenance: { doc: 'R1', section: '3.5', measured: true, notes: '格子 G1 (§3 冒頭表)。記号: 横線 1 本 (長さ 8.37)、縦線 1 本 (長さ 8.49)、交点は中央 (§3.5)。pitchY 8.49 = 横線の行間 8.43 (y 5.78/14.21/22.63) と縦線の行間 8.55 (中心 y 5.66/14.21/22.76) の平均 (§3.5; 量子化の 2 値)。許容する逸脱: 原本は横線と縦線の中心が x・y とも 0.12 ずれる (§3.5 交点) ため、残差 ±0.065 pt が 600 dpi で 1 px の差になり IoU がセルごとに 0.83〜0.93 で揺れる (同一 XObject の花崗閃緑岩は合格)。' },
+    provenance: { doc: 'R1', section: '3.5', measured: true, notes: '格子 G1 (§3 冒頭表)。記号: 横線 1 本 (長さ 8.37)、縦線 1 本 (長さ 8.49) (§3.5)。原本は横線と縦線の中心が x・y とも約 0.12 ずれ、そのずれ方が行ごとに変わる (§3.5 交点) ため、横線の層 (hBars) と縦線の層 (vBars) の 2 層に分ける。各層の rowPitches / colPitches / rowOffset / offset は原本 prim の図形中心から測った値 (行ごとの y の差 = rowPitches、偶数行・奇数行それぞれ同じ位置の列間の平均 = colPitches、offset は origin center から 1 行目 1 列目が合うように逆算; analysis/fix_phase1/grid.md)。pitchX 22.49 / pitchY 8.49 は公称値。導出値: 奇数行の最後の列間 (hBars 22.315 = 偶数行の幅 44.868 − 22.553、vBars 22.79 = 偶数行の幅 45.105 − 22.315) は原本の枠外に当たり測れないため、周期を閉じる目的で式から導出した値 (実測値ではない)。周期は層ごとに 44.868×16.855 (hBars)、45.105×17.096 (vBars) となり、両層で一致しないため模様全体の周期は長くなる (fit に入りにくい)。' },
     layers: [
       {
-        id: 'glyph', archetype: 'grid', params: { pitchX: 22.49, pitchY: 8.49, rowOffset: 0.5, rows: 3 },
-        motif: { kind: 'lineGlyph', hLines: 1, hLen: 8.37, vLines: 1, vLen: 8.49 },
+        id: 'hBars', archetype: 'grid',
+        params: { pitchX: 22.49, pitchY: 8.49, rowOffset: { pt: 11.157 }, rows: 3, cols: 3, rowPitches: [8.427, 8.428], colPitches: [[22.433, 22.435], [22.553, 22.315]] },
+        motif: { kind: 'hline', length: 8.37 },
+        offset: { x: -0.002, y: 0.002 },
+      },
+      {
+        id: 'vBars', archetype: 'grid',
+        params: { pitchX: 22.49, pitchY: 8.49, rowOffset: { pt: 11.396 }, rows: 3, cols: 3, rowPitches: [8.548, 8.548], colPitches: [[22.553, 22.552], [22.315, 22.79]] },
+        motif: { kind: 'lineGlyph', hLines: 0, vLines: 1, vLen: 8.49 },
+        offset: { x: -0.003, y: 0.002 },
       },
     ],
   },
@@ -105,11 +113,19 @@ export const PRESETS = [
   {
     schema: 'zc-pattern/1.0.0', id: 'zc:219125503', table: '3-3', code: '219125503', symbol: 'Dl',
     names: { ja: 'ドレライト' },
-    provenance: { doc: 'R1', section: '3.12', measured: true, notes: '格子 G1 (§3 冒頭表)。記号: 横線 1 本 (長さ 8.37) の下に縦線 1 本 (長さ 5.60) が立つ ⊥ 形 (vAnchor bottom, §3.12)。許容する逸脱: 原本の横線の y は 8.43/17.10/25.52 で行間が 8.67/8.42 と交互に揺れ、1 列目の縦線は横線の中央から 0.12 左にずれる (量子化)。' },
+    provenance: { doc: 'R1', section: '3.12', measured: true, notes: '格子 G1 (§3 冒頭表)。記号: 横線 1 本 (長さ 8.37) の下に縦線 1 本 (長さ 5.60) が立つ ⊥ 形 (§3.12)。原本の横線の y は 8.43/17.10/25.52 で行間が 8.67/8.42 と交互に揺れ、1 列目の縦線は横線の中央から 0.12 左にずれる (量子化) ため、花崗岩 (§3.5) と同じく横線の層 (hBars) と縦線の層 (vBars) の 2 層に分ける。各層の rowPitches / colPitches / rowOffset / offset は原本 prim の図形中心から測った値 (測り方は花崗岩と同じ; analysis/fix_phase1/grid.md)。pitchX 22.49 / pitchY 8.55 は公称値 (vBars の行間は公称値のまま)。導出値: 奇数行の最後の列間 (hBars 22.315 = 偶数行の幅 44.868 − 22.553、vBars 22.79 = 偶数行の幅 45.105 − 22.315) は原本の枠外に当たり測れないため、周期を閉じる目的で式から導出した値 (実測値ではない)。周期は層ごとに 44.868×17.097 (hBars)、45.105×17.10 (vBars) となり、両層で一致しないため模様全体の周期は長くなる (fit に入りにくい)。' },
     layers: [
       {
-        id: 'glyph', archetype: 'grid', params: { pitchX: 22.49, pitchY: 8.55, rowOffset: 0.5, rows: 3 },
-        motif: { kind: 'lineGlyph', hLines: 1, hLen: 8.37, vLines: 1, vLen: 5.60, vAnchor: 'bottom' },
+        id: 'hBars', archetype: 'grid',
+        params: { pitchX: 22.49, pitchY: 8.55, rowOffset: { pt: 11.157 }, rows: 3, cols: 3, rowPitches: [8.669, 8.428], colPitches: [[22.433, 22.435], [22.553, 22.315]] },
+        motif: { kind: 'hline', length: 8.37 },
+        offset: { x: -0.002, y: 2.771 },
+      },
+      {
+        id: 'vBars', archetype: 'grid',
+        params: { pitchX: 22.49, pitchY: 8.55, rowOffset: { pt: 11.396 }, rows: 3, cols: 3, colPitches: [[22.553, 22.552], [22.315, 22.79]] },
+        motif: { kind: 'lineGlyph', hLines: 0, vLines: 1, vLen: 5.6 },
+        offset: { x: -0.003, y: 0.002 },
       },
     ],
   },

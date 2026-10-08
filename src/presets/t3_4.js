@@ -119,19 +119,32 @@ export const PRESETS = [
     origin: { x: 6.21, y: 3.62 },
     layers: [
       {
-        id: 'chevrons', archetype: 'grid',
+        id: 'chevrons', archetype: 'grid', offset: { x: 0.022, y: -0.009 },
         motif: { kind: 'splitChevron', legLength: 5.12, legAngle: 57.8, apexGap: 1.42, open: 'down' },
-        params: { pitchX: 14.07, pitchY: 7.06, rowOffset: 0.5, rows: 4 },
+        params: {
+          pitchX: 14.07, pitchY: 7.06, rowOffset: { pt: 7.062 }, rows: 4, cols: 4,
+          rowPitches: [6.983, 7.224, 6.983],
+          colPitches: [[14.065, 14.066, 14.066], [14.006, 14.006, 14.185]],
+        },
       },
       {
-        id: 'triangles', archetype: 'grid', offset: { x: 7.30, y: 1.34 },
-        motif: { kind: 'triangle', base: 5.58, height: 4.58, fill: 'paper' },
-        params: { pitchX: 13.89, pitchY: 6.78, rowOffset: { pt: -7.24 }, rows: 4 },
+        id: 'triangles', archetype: 'grid', offset: { x: 7.203, y: 0.914 },
+        params: {
+          cycle: [
+            { kind: 'triangle', base: 5.46, height: 4.58, fill: 'paper' },
+            { kind: 'triangle', base: 5.70, height: 4.58, fill: 'paper' },
+          ],
+          assign: 'row',
+          pitchX: 13.89, pitchY: 6.78, rowOffset: { pt: -7.24 }, rows: 4, cols: 4,
+          rowPitches: [7.264, 7.585, 5.418],
+          colPitches: [[13.888, 13.888, 14.244], [14.007, 14.006, 14.007]],
+          rowShifts: [-0.04, 0, 0.04, 0],
+        },
       },
     ],
     provenance: {
       doc: 'R2', section: '10', measured: true,
-      notes: '三角形行の行間 7.10 / 7.58 / 5.42 は不等のため平均 6.78 で格子化。行内の段差 0.49 は再現しない。千鳥 −7.24 は行先頭 x 13.41(1 行目)と 6.17(2 行目)の差で、2 行目は左へずれる。origin は Λ 層の 1 行目 1 列目(凝灰岩と同じ)。三角形層の offset は、三角形の 1 行目 1 列目(x 13.51、y 4.96)と Λ 層の origin の差。三角形の位置は原本 prim(t3_4_p026_h1_r09 / r10)の bbox 中心を格子に最小二乗で当てた値(x: 中心 − 13.89·列 − 千鳥 の平均、y: 行 cy 4.54 / 11.80 / 19.38 / 24.80 − 6.78·行 の平均)。行間不等のため 3 行目は最大 0.86 pt ずれる',
+      notes: '両層とも不等間隔格子(rowPitches / colPitches / rowShifts、docs/CONVENTIONS.md §7.3.1)。値は原本 prim(t3_4_p026_h1_r09 / r10)の図形中心を行ごとにまとめた実測: rowPitches は行の y の差、colPitches は偶数行・奇数行それぞれ同じ位置の列間の平均、rowShifts は各行の x 残差の平均、各層の offset は origin から見て 1 行目 1 列目が合うよう逆算した値(fix_phase1/grid.md)。colPitches の 14.185(Λ 奇数行)と 14.244(三角 偶数行)は導出値(実測値ではない): 偶数行と奇数行で個数が違うため、2 つの列間リストの周期幅を揃えるよう「長い方の和 − 短い方の和」として足した値で、原本では枠外に当たる。pitchX / pitchY は公称値(等間隔近似、不等間隔の配置には使われない)。Λ の千鳥 7.062 も同じ実測から(2 行目先頭と 1 行目先頭の差)。三角形の千鳥 −7.24 は行先頭 x 13.41(1 行目)と 6.17(2 行目)の差。三角の底辺は行ごとに交互で、三角形層の偶数行(原本 1・3 行目)が 5.46、奇数行(2・4 行目)が 5.70(原本 prim r09 / r10 の bbox 幅の実測。cycle を assign row で交互)。高さは 4.57–4.58 で 4.58 に揃える。行内で三角の y が列ごとに違う段差(奇数行は両端が中 2 個より 0.24 上、1 行目は右端が 0.48 上)は手置きの不揃い(許容する逸脱、再現しない)。origin は Λ 層の 1 行目 1 列目(凝灰岩と同じ)',
     },
   },
 
@@ -141,19 +154,32 @@ export const PRESETS = [
     origin: { x: 6.21, y: 3.62 },
     layers: [
       {
-        id: 'chevrons', archetype: 'grid',
+        id: 'chevrons', archetype: 'grid', offset: { x: 0.022, y: -0.009 },
         motif: { kind: 'splitChevron', legLength: 5.12, legAngle: 57.8, apexGap: 1.42, open: 'down' },
-        params: { pitchX: 14.07, pitchY: 7.06, rowOffset: 0.5, rows: 4 },
+        params: {
+          pitchX: 14.07, pitchY: 7.06, rowOffset: { pt: 7.062 }, rows: 4, cols: 4,
+          rowPitches: [6.983, 7.224, 6.983],
+          colPitches: [[14.065, 14.066, 14.066], [14.006, 14.006, 14.185]],
+        },
       },
       {
-        id: 'triangles', archetype: 'grid', offset: { x: 7.30, y: 1.34 },
-        motif: { kind: 'triangle', base: 5.58, height: 4.58, fill: 'ink' },
-        params: { pitchX: 13.89, pitchY: 6.78, rowOffset: { pt: -7.24 }, rows: 4 },
+        id: 'triangles', archetype: 'grid', offset: { x: 7.203, y: 0.915 },
+        params: {
+          cycle: [
+            { kind: 'triangle', base: 5.46, height: 4.58, fill: 'ink' },
+            { kind: 'triangle', base: 5.70, height: 4.58, fill: 'ink' },
+          ],
+          assign: 'row',
+          pitchX: 13.89, pitchY: 6.78, rowOffset: { pt: -7.24 }, rows: 4, cols: 4,
+          rowPitches: [7.264, 7.585, 5.418],
+          colPitches: [[13.888, 13.888, 14.244], [14.007, 14.006, 14.007]],
+          rowShifts: [-0.04, 0, 0.04, 0],
+        },
       },
     ],
     provenance: {
       doc: 'R2', section: '11', measured: true,
-      notes: '三角形行の行間 7.10 / 7.58 / 5.42 は不等のため平均 6.78 で格子化。行内の段差 0.49 は再現しない。千鳥 −7.24 は行先頭 x 13.41(1 行目)と 6.17(2 行目)の差で、2 行目は左へずれる。origin は Λ 層の 1 行目 1 列目(凝灰岩と同じ)。三角形層の offset は、三角形の 1 行目 1 列目(x 13.51、y 4.96)と Λ 層の origin の差。三角形の位置は原本 prim(t3_4_p026_h1_r09 / r10)の bbox 中心を格子に最小二乗で当てた値(x: 中心 − 13.89·列 − 千鳥 の平均、y: 行 cy 4.54 / 11.80 / 19.38 / 24.80 − 6.78·行 の平均)。行間不等のため 3 行目は最大 0.86 pt ずれる',
+      notes: '両層とも不等間隔格子(rowPitches / colPitches / rowShifts、docs/CONVENTIONS.md §7.3.1)。値は原本 prim(t3_4_p026_h1_r09 / r10)の図形中心を行ごとにまとめた実測: rowPitches は行の y の差、colPitches は偶数行・奇数行それぞれ同じ位置の列間の平均、rowShifts は各行の x 残差の平均、各層の offset は origin から見て 1 行目 1 列目が合うよう逆算した値(fix_phase1/grid.md)。colPitches の 14.185(Λ 奇数行)と 14.244(三角 偶数行)は導出値(実測値ではない): 偶数行と奇数行で個数が違うため、2 つの列間リストの周期幅を揃えるよう「長い方の和 − 短い方の和」として足した値で、原本では枠外に当たる。pitchX / pitchY は公称値(等間隔近似、不等間隔の配置には使われない)。Λ の千鳥 7.062 も同じ実測から(2 行目先頭と 1 行目先頭の差)。三角形の千鳥 −7.24 は行先頭 x 13.41(1 行目)と 6.17(2 行目)の差。三角の底辺は行ごとに交互で、三角形層の偶数行(原本 1・3 行目)が 5.46、奇数行(2・4 行目)が 5.70(原本 prim r09 / r10 の bbox 幅の実測。cycle を assign row で交互)。高さは 4.57–4.58 で 4.58 に揃える。行内で三角の y が列ごとに違う段差(奇数行は両端が中 2 個より 0.24 上、1 行目は右端が 0.48 上)は手置きの不揃い(許容する逸脱、再現しない)。origin は Λ 層の 1 行目 1 列目(凝灰岩と同じ)',
     },
   },
 
@@ -226,11 +252,16 @@ export const PRESETS = [
     layers: [{
       id: 'triangles', archetype: 'grid',
       motif: { kind: 'triangle', base: 5.58, height: 4.45, fill: 'none' },
-      params: { pitchX: 19.65, pitchY: 8.55, rowOffset: { pt: 10.21 }, rows: 3 },
+      offset: { x: -0.021, y: 0.16 },
+      params: {
+        pitchX: 19.65, pitchY: 8.55, rowOffset: { pt: 10.208 }, rows: 3, cols: 3,
+        rowPitches: [8.067, 9.03],
+        colPitches: [[19.704, 19.704], [19.585, 19.823]],
+      },
     }],
     provenance: {
       doc: 'R2', section: '19', measured: true,
-      notes: '輪郭のみ(塗りなし)。寸法・配置・origin は火山弾(R2 §3)と同じ(原本 prim t3_4_p027_h0_r02 の中心座標は火山弾と一致)',
+      notes: '輪郭のみ(塗りなし)。寸法と origin は火山弾(R2 §3)と同じ(原本 prim t3_4_p027_h0_r02 の中心座標は火山弾と一致)。配置は不等間隔格子(docs/CONVENTIONS.md §7.3.1): rowPitches 8.067 / 9.03 は行の y の差、colPitches は偶数行・奇数行それぞれの列間、千鳥 10.208 も同じ実測から(2 行目先頭と 1 行目先頭の差)、offset は origin から見て 1 行目 1 列目が合うよう逆算した値(fix_phase1/grid.md)。奇数行の 19.823 は導出値(実測値ではない): 偶数行 3 個・奇数行 2 個で周期幅を揃えるため「長い方の和 − 短い方の和」として足した値で、原本では枠外に当たる。pitchX / pitchY は公称値。中段 2 個の三角の高さ 4.33 は再現しない(全個体 4.45)',
     },
   },
 

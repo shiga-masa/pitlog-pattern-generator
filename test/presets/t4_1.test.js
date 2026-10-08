@@ -69,7 +69,9 @@ test('the gravel lattice has the measured pitch, diameter and 8 instances (3-2-3
   const layer = g.layers[0];
   assert.equal(layer.params.pitchX, 21.66);
   assert.equal(layer.params.pitchY, 7.96);
-  assert.deepEqual(layer.params.rowOffset, { pt: 11.12 });
+  assert.deepEqual(layer.params.rowOffset, { pt: 11.525 });
+  assert.deepEqual(layer.params.colPitches, [[22.455, 20.865], [20.966, 22.354]]);
+  assert.match(g.provenance.notes, /導出値/);
   assert.equal(layer.motif.d, 7.03);
   assert.equal(layer.motif.fill, 'paper');
   assert.deepEqual(g.origin, { x: 7.35, y: 6.35 });

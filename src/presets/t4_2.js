@@ -18,13 +18,13 @@ export const PRESETS = [
     symbol: 'BS',
     names: { ja: '盛土' },
     layers: [
-      { id: 'diagonals', archetype: 'frameDiagonal', params: { direction: '/', count: 2, gap: 2.78 } },
+      { id: 'diagonals', archetype: 'frameDiagonal', params: { direction: '/', count: 2, gap: 2.78, placement: 'corners' } },
     ],
     provenance: {
       doc: 'R3',
       section: '3',
       measured: true,
-      notes: '盛土 (t4_2_p057_h1_r00): 2 本、(0,28.62)-(53.65,0) と (2.78,28.62)-(56.44,0)、角度 +28.1 度、水平間隔 2.78',
+      notes: '盛土 (t4_2_p057_h1_r00): 2 本、(0,28.62)-(53.65,0) と (2.78,28.62)-(56.44,0)、角度 +28.1 度、水平間隔 2.78。各線が枠の角の1つで終わる形のため placement corners',
     },
   },
   {

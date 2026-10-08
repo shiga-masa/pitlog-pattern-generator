@@ -140,7 +140,7 @@ export const PRESETS = [
       doc: 'R2',
       section: '§59',
       measured: true,
-      notes: 'single symbol, not tiled. Two S-curves with chord 28.01 x 16.37-16.61 (16.49 mean); the second is the first moved by (+6.41, +6.98). 6 rungs, length 8.21-9.58, roughly perpendicular to the curves. Centre offset (-1.79, -1.09): content bbox [9.02, 1.44, 43.44, 24.80] has centre (26.23, 13.12) vs frame centre (28.015, 14.205) of the 56.03 x 28.41 frame. The vein coordinates are not copied; they are rebuilt from the dimensions (design §1.4 b2).',
+      notes: 'single symbol, not tiled. Two S-curves with chord 28.01 x 16.37 (first) / 16.61 (second); height is the first-curve extent 16.37 (the motif has no separate second height, so the second curve is drawn at 16.37 too). The second is the first moved by (+6.41, +6.98). 6 rungs, length 8.21-9.58, roughly perpendicular to the curves. Centre offset (-1.79, -1.09): content bbox [9.02, 1.44, 43.44, 24.80] has centre (26.23, 13.12) vs frame centre (28.015, 14.205) of the 56.03 x 28.41 frame. The vein coordinates are not copied; they are rebuilt from the dimensions (design §1.4 b2).',
     },
     layers: [{
       id: 'vein',
@@ -149,7 +149,7 @@ export const PRESETS = [
       motif: {
         kind: 'vein',
         chord: 28.01,
-        height: 16.49,
+        height: 16.37,
         secondOffset: { x: 6.41, y: 6.98 },
         rungs: 6,
         rungLengthMin: 8.21,

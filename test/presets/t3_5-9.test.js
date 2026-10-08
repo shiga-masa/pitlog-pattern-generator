@@ -107,23 +107,30 @@ test('表3-5 patterns use the wave, hatch, grid and brick archetypes', () => {
   for (const k of ['wave', 'hatch', 'grid', 'brick']) assert.ok(kinds.has(k), `missing archetype ${k}`);
 });
 
-test('片麻岩 lineSpacing 9.70 is the mean distance of the 5 fitted base lines (-19.35 ... 19.47)', () => {
+test('片麻岩 waves: 3 inner double lines + 2 corner lines, all ending at whole half waves', () => {
   const s = T35.find((x) => x.id === 'zc:311020000');
-  const expected = meanGap2([-19.348, -9.718, -0.009, 9.700, 19.467]);
-  assert.equal(s.layers[0].params.lineSpacing, expected);
-  assert.equal(expected, 9.70);
+  assert.deepEqual(s.layers.map((l) => l.id), ['waves', 'cornerTL', 'cornerBR']);
+  for (const l of s.layers) {
+    assert.equal(l.params.lineSpacing, 9.6735, l.id);
+    assert.equal(l.params.ends, 'halfWave', l.id);
+  }
+  assert.equal(s.layers[0].params.lines, 3);
 });
 
-test('粘板岩 hatch spacing equals the mean of the 5 measured row gaps (4.24)', () => {
+test('粘板岩 inner hatch spacing = mean of the 3 inner gaps; outer lines = first to last line', () => {
   const s = T35.find((x) => x.id === 'zc:312010000');
-  assert.equal(s.layers[0].params.spacing, meanGap2([2.89, 6.98, 11.32, 15.65, 19.99, 24.08]));
+  const ys = [2.890, 6.983, 11.317, 15.651, 19.986, 24.079];
+  const inner = (ys[4] - ys[1]) / 3;
+  assert.equal(s.layers[0].params.spacing, Math.round(inner * 1000) / 1000);
+  assert.equal(s.layers[1].params.spacing, Math.round((ys[5] - ys[0]) * 1000) / 1000);
 });
 
 test('黒色片岩 and 緑色片岩 hatch spacings equal the mean of their row gaps (unequal rows)', () => {
   const bsct = T35.find((x) => x.id === 'zc:312160000');
   const gsct = T35.find((x) => x.id === 'zc:312050000');
-  assert.equal(bsct.layers[1].params.spacing, meanGap2([2.53, 6.67, 10.81, 14.95, 19.08, 22.99]));
-  assert.equal(gsct.layers[1].params.spacing, meanGap2([2.77, 6.69, 10.84, 14.98, 19.13, 23.28]));
+  assert.equal(bsct.layers.find((l) => l.id === 'lines').params.spacing, meanGap2([2.53, 6.67, 10.81, 14.95, 19.08, 22.99]));
+  const gLines = gsct.layers.find((l) => l.id === 'lines');
+  assert.equal(gLines.params.spacing, (23.284 - 6.686) / 4);
 });
 
 test('表3-9 lens, hook and bar pitches equal the means of the measured row gaps', () => {

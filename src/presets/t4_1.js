@@ -67,11 +67,16 @@ const PATTERN_PRESETS = [
       {
         id: 'gravels',
         archetype: 'grid',
-        params: { pitchX: 21.66, pitchY: 7.96, rowOffset: { pt: 11.12 }, rows: 3 },
+        offset: { x: 0.003, y: 0.002 },
+        params: {
+          pitchX: 21.66, pitchY: 7.96, rowOffset: { pt: 11.525 }, rows: 3, cols: 3,
+          colPitches: [[22.455, 20.865], [20.966, 22.354]],
+          rowShifts: [0, 0, -0.298],
+        },
         motif: { kind: 'circle', d: 7.03, fill: 'paper' },
       },
     ],
-    provenance: { doc: 'R3', section: '2 / t4_1_p053_h0_r03', measured: true, notes: 'x ピッチ 22.46/20.86 は不等で平均 21.66。行 y 6.35/14.31/22.27(prim 実測、ピッチ 7.96)。行 2 のオフセット 11.12 pt は中心誤差の平均を最小にする値。1 行目と 3 行目の x が 0.3 ずれる手置きは格子で再現できない(中心誤差 平均 0.32 が下限)。径は prim 外接の平均 7.03' },
+    provenance: { doc: 'R3', section: '2 / t4_1_p053_h0_r03', measured: true, notes: '行 y 6.35/14.31/22.27(prim 実測、ピッチ 7.96)。手置きの不等間隔を colPitches(偶数行 22.455/20.865、奇数行 20.966/22.354)・rowShifts(3 行目 -0.298)・rowOffset 11.525 pt・offset で表す(prim 中心の行別集計、fix_phase1/grid.md)。奇数行の最後の列間 22.354 は周期を閉じるための導出値(偶数行の和 − 奇数行の他の列間)で実測値ではない(原本では枠外)。pitchX 21.66 は列間の平均。径は prim 外接の平均 7.03' },
   },
 
   // ---- 粗礫 CG = 礫 -------------------------------------------------------
@@ -139,7 +144,12 @@ const PATTERN_PRESETS = [
       {
         id: 'gravels',
         archetype: 'grid',
-        params: { pitchX: 21.66, pitchY: 7.96, rowOffset: { pt: 11.12 }, rows: 3 },
+        offset: { x: 0.003, y: 0.002 },
+        params: {
+          pitchX: 21.66, pitchY: 7.96, rowOffset: { pt: 11.525 }, rows: 3, cols: 3,
+          colPitches: [[22.455, 20.865], [20.966, 22.354]],
+          rowShifts: [0, 0, -0.298],
+        },
         motif: { kind: 'circle', d: 7.03, fill: 'paper' },
       },
       {
@@ -147,12 +157,16 @@ const PATTERN_PRESETS = [
         // Offset is measured from the spec origin (first gravel) to the first dot.
         id: 'sands',
         archetype: 'grid',
-        offset: { x: 10.87, y: -0.46 },
-        params: { pitchX: 21.40, pitchY: 8.57, rowOffset: { pt: -10.76 }, rows: 3 },
+        offset: { x: 11.032, y: -0.504 },
+        params: {
+          pitchX: 21.40, pitchY: 8.57, rowOffset: { pt: -11.327 }, rows: 3, cols: 3,
+          rowPitches: [8.668, 8.466],
+          colPitches: [[21.064, 22.058], [22.257, 20.865]],
+        },
         motif: { kind: 'dot', d: 1.4 },
       },
     ],
-    provenance: { doc: 'R3', section: '2 / t4_1_p054_h0_r18', measured: true, notes: '礫層は礫と同一。砂の点 7 個(2-3-2)は prim 実測の最小二乗格子(最初の点 (18.22, 5.89)、x ピッチ 21.40、中段のずれ -10.76 pt、y ピッチ 8.57)で、x 誤差は最大 約 0.5 pt' },
+    provenance: { doc: 'R3', section: '2 / t4_1_p054_h0_r18', measured: true, notes: '礫層は礫と同一(導出値 22.354 を含む)。砂の点 7 個(2-3-2)は prim 中心の行別集計から rowPitches 8.668/8.466、colPitches(偶数行 21.064/22.058、奇数行 22.257/20.865)、rowOffset -11.327 pt、offset を求めた(fix_phase1/grid.md)。偶数行の最後の列間 22.058 は周期を閉じるための導出値で実測値ではない(原本では枠外)。pitchX 21.40・pitchY 8.57 は旧最小二乗格子の値' },
   },
 
   // ---- 砂質土 SF ----------------------------------------------------------
@@ -347,16 +361,16 @@ const PATTERN_PRESETS = [
         id: 'waves',
         archetype: 'wave',
         offset: { x: 0, y: -0.55 },
-        params: { angle: 0, wavelength: 11.33, amplitude: 1.0, lineSpacing: 16.23, lines: 2, margin: 2.78, phase: 0.746 },
+        params: { angle: 0, wavelength: 11.304, amplitude: 1.0515, lineSpacing: 16.23, lines: 2, margin: 2.78, phase: 0.7504, chords: 5 },
       },
       {
         id: 'wavesMid',
         archetype: 'wave',
         offset: { x: 0, y: -1.01 },
-        params: { angle: 0, wavelength: 11.33, amplitude: 1.0, lineSpacing: 16.23, lines: 1, margin: 2.78, phase: 0.746 },
+        params: { angle: 0, wavelength: 11.304, amplitude: 1.0515, lineSpacing: 16.23, lines: 1, margin: 2.78, phase: 0.7504, chords: 5 },
       },
     ],
-    provenance: { doc: 'R3', section: '2 / t4_1_p056_h0_r36', measured: true, notes: '基線 y 5.64 / 13.30 / 21.87(prim 実測)。行間は 7.66/8.57 の不等なので 1・3 本目(間隔 16.23)と 2 本目を別層にした。位相 0.746 は枠中心から見た上向きの零交差(x 2.78, 14.11, …)の位置。報告の 5 折れ線は正弦で近似。原本は半波ごとの折れ線が端点で離れて 13 本の図形に分かれるため個数は一致しない' },
+    provenance: { doc: 'R3', section: '2 / t4_1_p056_h0_r36', measured: true, notes: '基線 y 5.64 / 13.30 / 21.87(prim 実測)。行間は 7.66/8.57 の不等なので 1・3 本目(間隔 16.23)と 2 本目を別層にした。波長 11.304・振幅 1.0515・位相 0.7504 は prim の折れ線頂点への当てはめ値(fix_phase1/wave.md)。原本は半波を 5 本の折れ線で描くため chords 5 で描く。原本は半波ごとの折れ線が端点でわずかに離れて 13 本の図形に分かれる(照合ツールの端点結合許容 0.3 pt で 3 本にまとまる)' },
   },
 
   // ---- 高有機質土 Pt ------------------------------------------------------
@@ -415,10 +429,10 @@ const PATTERN_PRESETS = [
       {
         id: 'diagonals',
         archetype: 'frameDiagonal',
-        params: { direction: 'x', count: 2, gap: 2.78 },
+        params: { direction: 'x', count: 2, gap: 2.78, placement: 'corners' },
       },
     ],
-    provenance: { doc: 'R3', section: '2 / t4_1_p057_h0_r01', measured: true, notes: '二重線の水平間隔 2.78(線に垂直には 1.31)' },
+    provenance: { doc: 'R3', section: '2 / t4_1_p057_h0_r01', measured: true, notes: '二重線の水平間隔 2.78(線に垂直には 1.31)。原本の X は枠の四隅を結ぶ(placement corners、例 l [347.643,146.904]→[401.297,118.28] と [344.861,146.904]→[398.515,118.28]、fix_phase1/frameDiagonal.md)' },
   },
 
   // ---- 瓦礫 BG = 廃棄物 ---------------------------------------------------

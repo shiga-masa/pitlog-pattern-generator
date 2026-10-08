@@ -23,11 +23,11 @@ export const PRESETS = [
     names: { ja: '扇状地堆積物' },
     provenance: {
       doc: 'R1', section: '2.2', measured: true,
-      notes: '点と白丸が同じ行で交互、行ごとに入れ替わる (§2.2)。点と白丸で行ピッチが違う (点 8.55、白丸 7.95, §2.2) ので 1 つの格子の cycle では表せず、図形ごとに 2 層の千鳥格子 (ro 0.5、3 行 × 3 列) に分けた。px は同種間隔 (点 22.04、白丸 22.12, §2.2)。点 1.3 (幅 1.36 と高さ 1.23 の平均)、白丸 7.0 (§2.2)。offset は原本 prim の中心座標 (§2.2 の cx/cy と同じ) に最小二乗で合わせた値: 点 (-0.03, 0.05)、白丸は 1 行目が 2 個なので半ピッチ左へ (-10.64, 0)。列間隔が 10.0〜11.4 と不揃いで (手置き, §2.2 ランダム性) 中心誤差が残る。',
+      notes: '点と白丸が同じ行で交互、行ごとに入れ替わる (§2.2)。点と白丸で行ピッチが違う (点 8.55、白丸 7.95, §2.2) ので 1 つの格子の cycle では表せず、図形ごとに 2 層の千鳥格子 (3 行 × 3 列、奇数行のずらしは rowOffset の pt 値) に分けた。px は同種間隔 (点 22.04、白丸 22.12, §2.2)。点 1.3 (幅 1.36 と高さ 1.23 の平均)、白丸 7.0 (§2.2)。列間隔が 10.0〜11.4 と不揃い (手置き, §2.2 ランダム性) なので不等間隔格子で表す。px / py は公称ピッチとして残す。rowPitches は原本 prim の行 y の差、colPitches は偶数行・奇数行ごとの同位置の列間の平均、rowShifts は行ごとの残差の平均、offset は 1 行目 1 列目に合わせた逆算値 (原本 prim で実測, analysis/fix_phase1/grid.md)。rowOffset は奇数行の x ずらしの実測値 (pt)。導出値 (実測値でなく、偶数行・奇数行の列間リストの幅を揃えて周期を閉じるために足した値。原本では枠の外に当たる): 点の colPitches 奇数行の 21.485、白丸の colPitches 偶数行の 21.129。',
     },
     layers: [
-      { id: 'dots', archetype: 'grid', params: { pitchX: 22.04, pitchY: 8.55, rowOffset: 0.5, rows: 3, cols: 3 }, offset: { x: -0.03, y: 0.05 }, motif: { kind: 'dot', d: 1.3 } },
-      { id: 'circles', archetype: 'grid', params: { pitchX: 22.12, pitchY: 7.95, rowOffset: 0.5, rows: 3, cols: 3 }, offset: { x: -10.64, y: 0 }, motif: { kind: 'circle', d: 7.0, fill: 'paper' } },
+      { id: 'dots', archetype: 'grid', params: { pitchX: 22.04, pitchY: 8.55, rowOffset: { pt: 11.394 }, rows: 3, cols: 3, rowPitches: [8.729, 8.368], colPitches: [[22.79, 21.01], [22.315, 21.485]] }, offset: { x: -0.417, y: 0.002 }, motif: { kind: 'dot', d: 1.3 } },
+      { id: 'circles', archetype: 'grid', params: { pitchX: 22.12, pitchY: 7.95, rowOffset: { pt: -11.157 }, rows: 3, cols: 3, colPitches: [[22.315, 21.129], [22.79, 20.654]], rowShifts: [0, 0, -0.237] }, offset: { x: 11.156, y: 0.002 }, motif: { kind: 'circle', d: 7.0, fill: 'paper' } },
     ],
   },
   {
@@ -35,11 +35,11 @@ export const PRESETS = [
     names: { ja: '河床堆積物' },
     provenance: {
       doc: 'R1', section: '2.3', measured: true,
-      notes: '扇状地 (§2.2) と同じ部品で丸と点の位置が逆 (§2.3)。扇状地と同じく図形ごとに 2 層の千鳥格子 (ro 0.5、3 行 × 3 列)。px は同種間隔 (丸 21.29、点 21.09, §2.3)。py は行 y (丸 6.26, 14.21, 22.15 → 7.95、点 5.66, 14.37, 22.75 → 8.55, §2.3)。offset は原本 prim の中心座標に最小二乗で合わせた値: 丸 (1.01, 0)、点は 1 行目が 2 個なので半ピッチ左へ (-9.90, 0.07)。±1 pt の不揃い (手置き, §2.3) で中心誤差が残る。',
+      notes: '扇状地 (§2.2) と同じ部品で丸と点の位置が逆 (§2.3)。扇状地と同じく図形ごとに 2 層の千鳥格子 (3 行 × 3 列、奇数行のずらしは rowOffset の pt 値)。px は同種間隔 (丸 21.29、点 21.09, §2.3)。py は行 y (丸 6.26, 14.21, 22.15 → 7.95、点 5.66, 14.37, 22.75 → 8.55, §2.3)。±1 pt の不揃い (手置き, §2.3) を不等間隔格子で表す。px / py は公称ピッチとして残す。rowPitches は原本 prim の行 y の差、colPitches は偶数行・奇数行ごとの同位置の列間の平均、rowShifts は行ごとの残差の平均、offset は 1 行目 1 列目に合わせた逆算値 (原本 prim で実測, analysis/fix_phase1/grid.md)。rowOffset は奇数行の x ずらしの実測値 (pt)。導出値 (実測値でなく、偶数行・奇数行の列間リストの幅を揃えて周期を閉じるために足した値。原本では枠の外に当たる): 丸の colPitches 奇数行の 22.552、点の colPitches 偶数行の 22.078。',
     },
     layers: [
-      { id: 'circles', archetype: 'grid', params: { pitchX: 21.29, pitchY: 7.95, rowOffset: 0.5, rows: 3, cols: 3 }, offset: { x: 1.01, y: 0 }, motif: { kind: 'circle', d: 7.0, fill: 'paper' } },
-      { id: 'dots', archetype: 'grid', params: { pitchX: 21.09, pitchY: 8.55, rowOffset: 0.5, rows: 3, cols: 3 }, offset: { x: -9.90, y: 0.07 }, motif: { kind: 'dot', d: 1.3 } },
+      { id: 'circles', archetype: 'grid', params: { pitchX: 21.29, pitchY: 7.95, rowOffset: { pt: 11.632 }, rows: 3, cols: 3, colPitches: [[22.315, 20.891], [20.654, 22.552]], rowShifts: [0, 0, -0.237] }, offset: { x: 0.829, y: 0.002 }, motif: { kind: 'circle', d: 7.0, fill: 'paper' } },
+      { id: 'dots', archetype: 'grid', params: { pitchX: 21.09, pitchY: 8.55, rowOffset: { pt: -11.395 }, rows: 3, cols: 3, rowPitches: [8.709, 8.388], colPitches: [[20.89, 22.078], [22.078, 20.89]] }, offset: { x: 11.749, y: 0.002 }, motif: { kind: 'dot', d: 1.3 } },
     ],
   },
   {
@@ -53,11 +53,11 @@ export const PRESETS = [
     names: { ja: '氾濫原堆積物' },
     provenance: {
       doc: 'R1', section: '2.5', measured: true,
-      notes: '点と水平短線が同じ行で交互、行ごとに入れ替わる (§2.5)。図形ごとに 2 層の千鳥格子 (ro 0.5、3 行 × 3 列)。px は同種間隔 (点 21.92、線 22.26, §2.5)。py は行 y (点 5.90, 14.51, 22.75 → 8.43、線 5.78, 14.21, 22.88 → 8.55, §2.5)。線長 8.44 = 8.31〜8.55 の平均 (§2.5)。offset は原本 prim の中心座標に最小二乗で合わせた値: 点 (1.23, 0.17)、線は 1 行目が 2 本なので半ピッチ左へ (-9.69, 0.07)。間隔 21.0〜22.6 の不揃い (§2.5) で中心誤差が残る。',
+      notes: '点と水平短線が同じ行で交互、行ごとに入れ替わる (§2.5)。図形ごとに 2 層の千鳥格子 (3 行 × 3 列、奇数行のずらしは rowOffset の pt 値)。px は同種間隔 (点 21.92、線 22.26, §2.5)。py は行 y (点 5.90, 14.51, 22.75 → 8.43、線 5.78, 14.21, 22.88 → 8.55, §2.5)。線長 8.44 = 8.31〜8.55 の平均 (§2.5)。間隔 21.0〜22.6 の不揃い (§2.5) を不等間隔格子で表す。px / py は公称ピッチとして残す。rowPitches は原本 prim の行 y の差、colPitches は偶数行・奇数行ごとの同位置の列間の平均、rowShifts は行ごとの残差の平均、offset は 1 行目 1 列目に合わせた逆算値 (原本 prim で実測, analysis/fix_phase1/grid.md)。rowOffset は奇数行の x ずらしの実測値 (pt)。導出値 (実測値でなく、偶数行・奇数行の列間リストの幅を揃えて周期を閉じるために足した値。原本では枠の外に当たる): 点の colPitches 奇数行の 21.367、線の colPitches 偶数行の 21.364。',
     },
     layers: [
-      { id: 'dots', archetype: 'grid', params: { pitchX: 21.92, pitchY: 8.43, rowOffset: 0.5, rows: 3, cols: 3 }, offset: { x: 1.23, y: 0.17 }, motif: { kind: 'dot', d: 1.3 } },
-      { id: 'lines', archetype: 'grid', params: { pitchX: 22.26, pitchY: 8.55, rowOffset: 0.5, rows: 3, cols: 3 }, offset: { x: -9.69, y: 0.07 }, motif: { kind: 'hline', length: 8.44 } },
+      { id: 'dots', archetype: 'grid', params: { pitchX: 21.92, pitchY: 8.43, rowOffset: { pt: 11.276 }, rows: 3, cols: 3, rowPitches: [8.608, 8.247], colPitches: [[22.553, 21.01], [22.196, 21.367]] }, offset: { x: 0.889, y: 0.122 }, motif: { kind: 'dot', d: 1.3 } },
+      { id: 'lines', archetype: 'grid', params: { pitchX: 22.26, pitchY: 8.55, rowOffset: { pt: -11.276 }, rows: 3, cols: 3, rowPitches: [8.427, 8.669], colPitches: [[22.435, 21.364], [22.553, 21.246]] }, offset: { x: 12.283, y: 0.122 }, motif: { kind: 'hline', length: 8.44 } },
     ],
   },
   {
@@ -71,11 +71,11 @@ export const PRESETS = [
     names: { ja: '湖沼堆積物' },
     provenance: {
       doc: 'R1', section: '2.7', measured: true,
-      notes: '氾濫原 (§2.5) と同じ部品で点と線の位置が逆 (§2.7)。図形ごとに 2 層の千鳥格子 (ro 0.5、3 行 × 3 列)。px は同種間隔 (点 21.09、線 21.13, §2.7)。py: 点は河床の小点と座標まで同じ (§2.7) なので 8.55 (§2.3)、線は行 y 5.78, 14.21, 22.63 から 8.43 (§2.7)。線長 8.37 (8.31〜8.55 の平均, §2.7)。offset は原本 prim の中心座標に最小二乗で合わせた値: 点は 1 行目が 2 個なので半ピッチ左へ (-9.90, 0.07)、線 (0.56, 0)。線の間隔が 19.59〜22.43 と揺れる (§2.7) ので中心誤差が残る。',
+      notes: '氾濫原 (§2.5) と同じ部品で点と線の位置が逆 (§2.7)。図形ごとに 2 層の千鳥格子 (3 行 × 3 列、奇数行のずらしは rowOffset の pt 値)。px は同種間隔 (点 21.09、線 21.13, §2.7)。py: 点は河床の小点と座標まで同じ (§2.7) なので 8.55 (§2.3)、線は行 y 5.78, 14.21, 22.63 から 8.43 (§2.7)。線長 8.37 (8.31〜8.55 の平均, §2.7)。線の間隔が 19.59〜22.43 と揺れる (§2.7) ので不等間隔格子で表す。点の配置は河床 (zc:126100000) の点と同じ値。px / py は公称ピッチとして残す。rowPitches は原本 prim の行 y の差、colPitches は偶数行・奇数行ごとの同位置の列間の平均、rowShifts は行ごとの残差の平均、offset は 1 行目 1 列目に合わせた逆算値 (原本 prim で実測, analysis/fix_phase1/grid.md)。rowOffset は奇数行の x ずらしの実測値 (pt)。導出値 (実測値でなく、偶数行・奇数行の列間リストの幅を揃えて周期を閉じるために足した値。原本では枠の外に当たる): 点の colPitches 偶数行の 22.078、線の colPitches 奇数行の 20.653。',
     },
     layers: [
-      { id: 'dots', archetype: 'grid', params: { pitchX: 21.09, pitchY: 8.55, rowOffset: 0.5, rows: 3, cols: 3 }, offset: { x: -9.90, y: 0.07 }, motif: { kind: 'dot', d: 1.3 } },
-      { id: 'lines', archetype: 'grid', params: { pitchX: 21.13, pitchY: 8.43, rowOffset: 0.5, rows: 3, cols: 3 }, offset: { x: 0.56, y: 0 }, motif: { kind: 'hline', length: 8.37 } },
+      { id: 'dots', archetype: 'grid', params: { pitchX: 21.09, pitchY: 8.55, rowOffset: { pt: -11.395 }, rows: 3, cols: 3, rowPitches: [8.709, 8.388], colPitches: [[20.89, 22.078], [22.078, 20.89]] }, offset: { x: 11.749, y: 0.002 }, motif: { kind: 'dot', d: 1.3 } },
+      { id: 'lines', archetype: 'grid', params: { pitchX: 21.13, pitchY: 8.43, rowOffset: { pt: 11.157 }, rows: 3, cols: 3, colPitches: [[22.434, 19.585], [21.366, 20.653]] }, offset: { x: -0.002, y: 0.001 }, motif: { kind: 'hline', length: 8.37 } },
     ],
   },
   {
