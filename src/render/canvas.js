@@ -4,23 +4,20 @@
  * Colours: only ink and paper; no globalAlpha other than 1; no gradients.
  *
  * Structure (so that most of it runs in Node):
- *  - planSpec(spec, options, deps)        pure: resolve + run the layers -> plan (pt, z order)
+ *  - planSpec(spec, options, deps)        pure: render/svg.js buildScene() -> plan (pt, z order)
  *  - buildInstructions(plan, {x,y,scale}) pure: plan -> flat list of drawing instructions
  *  - primitivesInstructions(list, o)      pure: primitive list -> instructions (drawPrimitives)
  *  - drawInstructions(ctx, list)          browser-only: replays the list on a 2D context
  *  - renderCanvas / drawPrimitives        glue: need a real 2D context
- * The layer loop in planSpec mirrors renderSpecToSVG in render/svg.js; keep them in step.
+ * planSpec takes its layers from buildScene() in render/svg.js, the pipeline the SVG output uses
+ * (tiling, periodic copies, knockout), so SVG and Canvas/PNG draw the same primitives.
  */
 
-import { LIMITS } from '../core/defaults.js';
-import { NotImplementedError, LimitError, GeometryError, ZcError, makeCounts } from '../core/errors.js';
+import { ZcError, GeometryError } from '../core/errors.js';
 import { normalizeColor } from '../core/colors.js';
 import { validatePrimitive } from '../core/primitives.js';
-import { resolveSpec } from '../core/resolve.js';
-import { DEFAULT_ENV } from '../core/validate.js';
-import { createRng, layerSeed } from '../core/rng.js';
 import { DEG } from '../core/geom.js';
-import { buildMotif, motifExtent } from '../motifs/index.js';
+import { buildScene, resolveInputSpec } from './svg.js';
 
 /** Methods a CanvasRenderingContext2D must have for drawInstructions. */
 const CONTEXT_METHODS = Object.freeze([
@@ -32,86 +29,28 @@ const CONTEXT_METHODS = Object.freeze([
 // Pure part
 // ---------------------------------------------------------------------------
 
-let defaultRegistryPromise = null;
-async function defaultRegistry() {
-  if (!defaultRegistryPromise) {
-    defaultRegistryPromise = import('../presets/index.js').then((m) => m.loadDefaultRegistry().registry);
-  }
-  return defaultRegistryPromise;
-}
-
 /**
  * Turn a preset id/query or a full spec into a full spec object (the same lookup as renderSVG).
  * @param {string|object} input @param {{registry?:object}} [deps] @returns {Promise<object>}
  */
-export async function resolveInput(input, deps = {}) {
-  if (typeof input !== 'string') return input;
-  const reg = deps.registry ?? await defaultRegistry();
-  return reg.get(reg.resolveId(input));
+export function resolveInput(input, deps = {}) {
+  return resolveInputSpec(input, deps);
 }
 
 /**
- * Resolve a spec and run every layer, mirroring renderSpecToSVG. Nothing is drawn yet.
- * A failing layer throws; no partial plan is returned.
+ * Resolve a spec and compute its scene with the shared pipeline (render/svg.js buildScene()):
+ * every tileMode ('frame', 'period', 'fit') and blend ('over', 'knockout') behaves as in the SVG output.
+ * Nothing is drawn yet. A failing layer throws; no partial plan is returned.
  * @param {object} spec full spec (not an id) @param {object} [options] @param {{env?:object}} [deps]
  * @returns {{id:string, region:{x:number,y:number,width:number,height:number}, unit:string, dpi:number,
  *   colors:{ink:string,paper:string}, strokeWidth:number, cap:string, join:string, ground:string,
  *   frame:{show:string,lineWidth:number}, layers:Array<{id:string,clip:boolean,primitives:object[]}>,
  *   meta:{id:string, density:number, strokeWidth:number, region:object, unit:string, dpi:number,
- *     colors:object, warnings:string[], counts:object}}}
+ *     colors:object, tiling:object, warnings:string[], counts:object}}}
  */
 export function planSpec(spec, options = {}, deps = {}) {
-  const env = deps.env ?? DEFAULT_ENV;
-  const r = resolveSpec(spec, options, env);
-  const { drawSpec: s, render } = r;
-  if (render.tileMode === 'fit') throw new NotImplementedError('renderCanvas tileMode "fit" (design §5.5)', 'render-1');
-  const colors = { ink: normalizeColor(s.ink), paper: normalizeColor(s.paper) };
-  const region = { x: 0, y: 0, width: render.region.width, height: render.region.height };
-  const warnings = [...r.warnings];
-  const counts = { layers: makeCounts(), instances: { placed: 0, skipped: 0 }, primitives: 0 };
-
-  // compute in array order (avoid/relation refer to earlier layers), draw in z order
-  const results = {};
-  for (const layer of s.layers) {
-    const arch = env.archetypes[layer.archetype];
-    if (layer.blend === 'knockout') throw new NotImplementedError(`blend "knockout" (layer ${layer.id})`, 'render-1');
-    const rng = createRng(layerSeed(s.seed, layer));
-    const ctx = {
-      region,
-      tileMode: render.tileMode,
-      strokeWidth: render.strokeWidth,
-      origin: s.origin,
-      jitter: s.jitter,
-      clip: layer.clip ?? s.clip,
-      rng,
-      results: { ...results },
-      buildMotif: (m, motifRng = rng) => buildMotif(m, { strokeWidth: render.strokeWidth, rng: motifRng }),
-      motifExtent,
-    };
-    let res;
-    try {
-      res = checkLayerResult(arch.render(layer, ctx), layer);
-    } catch (e) {
-      counts.layers.failed++;
-      throw e; // a single render never returns a partial picture
-    }
-    if (res.primitives.length === 0 && layer.archetype !== 'empty') warnings.push(`layer ${layer.id}: produced no primitives (placed ${res.placed}, skipped ${res.skipped})`);
-    warnings.push(...res.warnings.map((w) => `layer ${layer.id}: ${w}`));
-    counts.layers.processed++;
-    counts.instances.placed += res.placed;
-    counts.instances.skipped += res.skipped;
-    counts.primitives += res.primitives.length;
-    if (counts.primitives > LIMITS.maxPrimitives) {
-      throw new LimitError(`more than ${LIMITS.maxPrimitives} primitives (layer ${layer.id}); lower the density or the output size`);
-    }
-    results[layer.id] = res;
-  }
-  const order = s.layers.map((l, i) => ({ l, i })).sort((a, b) => a.l.z - b.l.z || a.i - b.i).map((x) => x.l);
-  const layers = order.map((l) => ({
-    id: l.id,
-    clip: Boolean(l.clip ?? s.clip),
-    primitives: results[l.id].primitives,
-  }));
+  const sc = buildScene(spec, options, deps, { defaultTileMode: 'frame', output: 'region' });
+  const { drawSpec: s, render, colors, region, tiling } = sc;
   return {
     id: s.id,
     region,
@@ -123,7 +62,7 @@ export function planSpec(spec, options = {}, deps = {}) {
     join: s.stroke.join,
     ground: s.ground,
     frame: { show: s.frame.show, lineWidth: s.frame.lineWidth },
-    layers,
+    layers: sc.layers,
     meta: {
       id: s.id,
       density: render.density,
@@ -132,24 +71,10 @@ export function planSpec(spec, options = {}, deps = {}) {
       unit: render.unit,
       dpi: render.dpi,
       colors,
-      warnings,
-      counts,
+      tiling: { mode: tiling.mode, periodic: tiling.periodic, tile: tiling.tile, fit: tiling.fit, adjust: tiling.adjust },
+      warnings: sc.warnings,
+      counts: sc.counts,
     },
-  };
-}
-
-function checkLayerResult(res, layer) {
-  const where = `layer ${layer.id} (${layer.archetype})`;
-  if (!res || !Array.isArray(res.primitives)) throw new ZcError(`${where}: render() must return {primitives, placed, skipped, warnings}`);
-  for (const k of ['placed', 'skipped']) {
-    if (!Number.isInteger(res[k]) || res[k] < 0) throw new ZcError(`${where}: result.${k} must be an integer >= 0`);
-  }
-  if (!Array.isArray(res.warnings)) throw new ZcError(`${where}: result.warnings must be an array`);
-  return {
-    ...res,
-    primitives: res.primitives.map((p, i) => {
-      try { return validatePrimitive(p); } catch (e) { throw new ZcError(`${where}: primitive ${i}: ${e.message}`); }
-    }),
   };
 }
 

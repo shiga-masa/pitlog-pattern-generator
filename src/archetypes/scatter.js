@@ -3,12 +3,22 @@
  *
  * Edit only this file (and test/archetypes/scatter.test.js). PARAMS is the single source of truth for
  * this archetype's parameters: validation, defaults and density scaling all read it.
+ *
+ * Stage 2 contract notes:
+ * - sampling: 'jitteredGrid' (default) one centre per cell of a near-square grid; 'poisson' uniform
+ *   candidates with minDistance REQUIRED (dart throwing); 'uniform' independent uniform centres, with
+ *   minDistance applied only when it is given. 'uniform' is kept as the plain baseline of the other two.
+ * - spec.origin is not used (the segments are placed over the whole region).
+ * - layer.offset translates every segment after placement; a segment that leaves the region is
+ *   counted in `skipped` with a warning.
+ * - period: one region (frame) scaled by ctx.fit (design §5.5).
  */
 
 import { GeometryError } from '../core/errors.js';
 import { angle, arr, enumOf, fixed, obj, ratio, size } from '../core/schema.js';
 import { bboxInside, dir } from '../core/geom.js';
 import { line } from '../core/primitives.js';
+import { fitPeriod, offsetOf } from '../core/fit.js';
 
 /**
  * Attempts per segment when minDistance rejects a candidate centre (an implementation limit chosen here,
@@ -75,6 +85,26 @@ function gridShape(n, bw, bh) {
  * @returns {import('../core/types.js').LayerResult}
  */
 export function render(layer, ctx) {
+  const res = renderUnshifted(layer, ctx);
+  const off = offsetOf(layer);
+  if (off.x === 0 && off.y === 0) return res;
+  const primitives = [];
+  const anchors = [];
+  let gone = 0;
+  res.primitives.forEach((q, i) => {
+    const s = { ...q, x1: q.x1 + off.x, y1: q.y1 + off.y, x2: q.x2 + off.x, y2: q.y2 + off.y };
+    const b = { minX: Math.min(s.x1, s.x2), minY: Math.min(s.y1, s.y2), maxX: Math.max(s.x1, s.x2), maxY: Math.max(s.y1, s.y2) };
+    if (bboxInside(b, ctx.region)) {
+      primitives.push(s);
+      anchors.push({ x: res.anchors[i].x + off.x, y: res.anchors[i].y + off.y });
+    } else gone++;
+  });
+  const warnings = [...res.warnings];
+  if (gone > 0) warnings.push(`scatter: layer offset (${off.x}, ${off.y}) moves ${gone} segment(s) out of the region; not drawn`);
+  return { primitives, placed: res.placed - gone, skipped: res.skipped + gone, warnings, anchors };
+}
+
+function renderUnshifted(layer, ctx) {
   const p = layer.params;
   const region = ctx.region;
   const W = region.width;
@@ -219,5 +249,5 @@ export function render(layer, ctx) {
  * @returns {{w:number, h:number} | null}
  */
 export function period(layer, ctx) {
-  return { w: ctx.region.width, h: ctx.region.height };
+  return fitPeriod({ w: ctx.region.width, h: ctx.region.height }, ctx);
 }

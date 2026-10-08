@@ -98,10 +98,18 @@ test('layers draw in z order (ties keep array order)', () => {
   assert.ok(svg.indexOf('data-layer="top"') < svg.indexOf('data-layer="circles"'));
 });
 
-test('stubs surface as NotImplementedError, never as an empty picture', () => {
-  assert.throws(() => renderSpecToSVG(spec()), (e) => e instanceof NotImplementedError && e.owner === 'arch-1');
-  assert.throws(() => renderSpecToSVG(spec({ layers: [{ id: 'none', archetype: 'empty' }] })), NotImplementedError);
-  assert.throws(() => renderSpecToSVG(spec(), { tileMode: 'fit' }, { env: fakeEnv }), /fit/);
+test('an archetype that is not implemented surfaces as NotImplementedError, never as an empty picture', () => {
+  const stub = { ...fakeGrid, render: () => { throw new NotImplementedError('grid.render', 'arch-1'); } };
+  const env = makeEnv({ archetypes: { ...ARCHETYPES, grid: stub } });
+  assert.throws(() => renderSpecToSVG(spec(), {}, { env }), (e) => e instanceof NotImplementedError && e.owner === 'arch-1');
+});
+
+test('the real archetypes render the fixture spec in frame and period mode with the default environment', () => {
+  for (const tileMode of ['frame', 'period']) {
+    const { svg, meta } = renderSpecToSVG(spec(), { tileMode });
+    assert.ok(meta.counts.primitives > 0, tileMode);
+    assert.match(svg, /^<svg /);
+  }
 });
 
 test('bad archetype output is rejected with the layer id', () => {

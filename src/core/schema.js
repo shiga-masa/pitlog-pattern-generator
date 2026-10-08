@@ -25,12 +25,12 @@ export const SCHEMA_ID = 'zc-pattern/1.0.0';
 export const SCHEMA_PATTERN = /^zc-pattern\/1\.\d+\.\d+$/;
 
 /** Canonical preset id (docs/CONVENTIONS.md §6). */
-export const ID_PATTERN = /^zc:(?:\d{9}|t3-9:[1-5]|t4-3:-?[A-Z][a-z]?|t5-[12]:\d{1,3})$/;
+export const ID_PATTERN = /^zc:(?:\d{9}|t3-9:[1-5]|t4-3:-?[A-Z][a-z]?|t5-[123]:\d{1,3})$/;
 /** Layer id: lowerCamelCase ASCII. */
 export const LAYER_ID_PATTERN = /^[a-z][A-Za-z0-9]*$/;
 
 export const TABLES = Object.freeze([
-  '3-1', '3-2', '3-3', '3-4', '3-5', '3-6', '3-7', '3-8', '3-9', '4-1', '4-2', '4-3', '5-1', '5-2',
+  '3-1', '3-2', '3-3', '3-4', '3-5', '3-6', '3-7', '3-8', '3-9', '4-1', '4-2', '4-3', '5-1', '5-2', '5-3',
 ]);
 
 export const UNITS = Object.freeze(['pt', 'deg', 'ratio', 'count', 'px', 'dpi', 'factor', 'mm']);

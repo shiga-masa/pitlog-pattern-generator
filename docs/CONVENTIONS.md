@@ -25,7 +25,8 @@ src/
     density.js           密度(方式 B)                          段階 0(凍結)
     resolve.js           spec + options の解決                  段階 0(凍結)
     registry.js          ID → 定義、別名解決                    段階 0(凍結)
-    lattice.js, clip.js  格子点・クリップ(スタブ)              core-A
+    lattice.js, clip.js  格子点・クリップ                       core-A
+    fit.js               tileMode 'fit' と layer.offset の共通処理  統合担当(段階 2)
   archetypes/
     index.js             型レジストリ                           段階 0(凍結)
     <type>.js            1 型 1 ファイル(スタブ)               arch-1〜5(§11)
@@ -35,13 +36,15 @@ src/
     curves.js, glyphs.js                                         motif-2
   render/
     svg.js               SVG 出力ユーティリティ + renderSVG     段階 0(拡張は render-1)
-    svgPattern.js        <pattern>(スタブ)                    render-1
-    canvas.js, png.js    Canvas / PNG(スタブ)                 render-2
+    svgPattern.js        <pattern>                              render-1
+    canvas.js, png.js    Canvas / PNG                           render-2
+    knockout.js          blend 'knockout' の交差判定             統合担当(段階 2)
   presets/
     index.js             全プリセットの読み込み                  統合担当(段階 2)
-    t3_1.js … t5.js      プリセット(空配列)                   preset-1〜5
+    t3_1.js … t5.js      プリセット                              preset-1〜5(t5.js の表 5-3 は段階 2)
 site/                    GitHub Pages の画面(index.html + main.js)  app-1〜3
-test/                    node --test(依存なし)
+index.html, .nojekyll    配信ルート(リポジトリ直下)から site/ へ移る入口  統合担当(段階 2)
+test/                    node --test(依存なし)。test/presets/smoke.test.js は全プリセットの描画検査(段階 2)
 docs/CONVENTIONS.md      この文書                               段階 0
 ```
 
@@ -67,9 +70,21 @@ docs/CONVENTIONS.md      この文書                               段階 0
 
 ## 3. 領域・タイル境界・層の順序・精度
 
-### 3.1 領域(region)
-- archetype が受け取る `ctx.region` は `{x: 0, y: 0, width, height}`(pt)。`options.size` があればその大きさ、なければ spec の `frame`。
-- `origin`: `'center'`(既定)は格子の中央の行・列を領域の中心に置く(設計書 R3 §5.3-6)。`'topLeft'` は最初の点を (pitchX/2, pitchY/2) に置く。`{x, y}` は最初の点の座標。
+### 3.1 領域(region)・origin・layer.offset
+- archetype が受け取る `ctx.region` は `{x: 0, y: 0, width, height}`(pt)。`options.size` があればその大きさ、なければ spec の `frame`。`tileMode` が `'period'` / `'fit'` のときは 1 枚のタイル(§3.3)。
+- `origin`(spec の最上位、全層で共通)と `layer.offset`(層ごと、pt、density で縮む)の意味は型ごとに次のとおり(段階 2 で統一)。offset は「その層の基準点をずらす量」で、黙って無視する型は無い。
+
+| 型 | `origin: 'center'`(既定) | `'topLeft'` | `{x, y}` | `layer.offset` |
+|---|---|---|---|---|
+| grid | 格子の中央の行・列を領域の中心に(設計書 R3 §5.3-6) | 最初の点を (pitchX/2, pitchY/2) | 最初の点 (row 0, col 0) の座標 | 格子全体を平行移動(端の判定の前) |
+| hatch / brick | 線の基準点 = 領域の中心 | 基準点 = (0, 0) | 基準点 = (x, y) | 基準点を平行移動 |
+| wave | 基準点 R = 中心。本数指定時は R に対して対称 | R = (0, 0)、本数指定時は R から並べる | R = (x, y) | R を平行移動 |
+| diagonalBand | 帯の基準点 = 中心 | エラー(帯は領域を貫くので定義しない) | 基準点 = (x, y) | 基準点を平行移動 |
+| edgeBand | 行を縦方向に中央揃え | 最初の行を pitchY/2 | 最初の行を y(x は無視して警告) | y だけ行をずらす。x ≠ 0 はエラー |
+| scatter | 使わない(領域全体に配置) | 同左 | 同左 | 配置後の短線を平行移動。領域から出た短線は skipped と警告 |
+| symbol | 使わない(`params.anchor` が決める) | 同左 | 同左 | anchor に加える |
+| frameDiagonal | 使わない(枠の角を結ぶ) | 同左 | 同左 | 0 以外はエラー |
+| empty | 使わない | 同左 | 同左 | 描くものが無いので影響なし |
 
 ### 3.2 境界の扱い(edgeMode)
 - 領域は閉区間 [0, width] × [0, height]。判定の許容差は `defaults.EPS` = 1e-6 pt。
@@ -79,15 +94,21 @@ docs/CONVENTIONS.md      この文書                               段階 0
 - `clip: true`(既定)のとき SVG は全層に領域の clipPath を掛ける。層単位で `layer.clip` で上書きできる。
 
 ### 3.3 tileMode
-- `'frame'`(`renderSVG` の既定): 領域 1 枚を描く。継ぎ目は考えない。原本見本の再現と検証用。
-- `'period'`(`renderSVGPattern` の既定): 各 archetype の `period()` が返す最小周期をタイルにする。周期の境界をまたぐ個体は、反対側にも複製して描く(シームレス)。周期が存在しない場合 `period()` は `null` を返し、render-1 が `'fit'` に落として `warnings` に記録する。
-- `'fit'`: 指定サイズに整数個の周期が入るようにピッチを ±5 % 以内で丸め、丸め量を `meta.adjust` で返す(render-1 が実装。現状は NotImplementedError)。
+- `'frame'`(`renderSVG` / `renderCanvas` / `renderPNG` の既定): 領域 1 枚を描く。継ぎ目は考えない。原本見本の再現と検証用。
+- `'period'`(`renderSVGPattern` の既定): 全層の `period()` の共通周期(各軸で最初の周期の 64 倍まで探す)を 1 枚のタイルにして、出力範囲を敷き詰める。
+- `'fit'`: 共通周期を、指定サイズに整数個入るように各軸 ±5 % 以内で丸める(`meta.tiling.adjust` に周期・個数・比を返す)。
+- **周期タイルの契約(段階 2)**: `ctx.tileMode === 'period'` のとき archetype は、タイル `[0, w) × [0, h)` の中に **各個体を 1 回だけ** 描く(格子点はタイル内へ折り返した位置、線はタイルでクリップ)。境界をまたぐ個体の反対側の複製は renderer(`render/svg.js` の `wrapToRect`)だけが作る。archetype が自分で複製すると二重になる。線の型はタイルの閉区間でクリップするので、辺の上の線が両側に出るが、座標が 1e-6 pt まで一致する重複は `wrapToRect` が 1 本にまとめる。角に接するだけの長さ 0 の線は描かない(`clip.clipSegmentProper`)。
+- **`ctx.fit`(段階 2)**: `{x, y}` の丸め比(`'frame'` / `'period'` では `{x: 1, y: 1}`)。格子の型(grid, edgeBand)はピッチに掛け、モチーフの大きさは変えない。線の型(hatch, brick, wave)は丸める前の座標で描いて線を (fit.x, fit.y) 倍に伸縮する(`core/fit.js` の `drawStretched`。角度・振幅も同じ ±5 % 以内で変わる)。枠 1 枚を周期とする型(scatter, symbol, frameDiagonal, empty)はタイルの大きさに従う。どの型も `period()` は丸める前の周期 × fit を返す(`fitPeriod`)。renderer は丸めた後の `period()` がタイルを割り切ることを検査し、割り切らなければ層名付きで GeometryError。
+- **周期が無いとき**: `period()` が `null`(diagonalBand、外枠付きの edgeBand、margin のある hatch / wave、本数指定の wave、0°・90° 以外に傾けた brick、軸に沿う周期の無い斜めの wave など)。
+  - `'period'`: どれかの層に周期が無い → 出力範囲 1 枚(frame)に落として警告。共通周期が無い → `'fit'` を試し、±5 % で丸められなければ frame に落として警告(理由を警告文に含める)。
+  - `'fit'`(明示): 落とさない。周期が無い層・共通周期が無い・±5 % を超える、はいずれも理由付きの GeometryError。
 
 ### 3.4 描画順
 1. 地(`ground: 'paper'` のとき paper で領域を塗る)
 2. 層。**計算は配列順**(後の層が前の層の結果 `ctx.results` を参照できる: `avoid`, `relation`)、**描画は z 昇順、同じ z は配列順**。z の既定は 0。
 3. 枠(`frame.show: 'ink'`)。線幅の半分だけ内側に寄せた矩形として最後に描く(viewBox の外に線がはみ出さない)。
 - 原本の重ね順(設計書 §4: 点 → 斜線、短線 → 白三角形 など)は配列順で表す。白抜き(paper 塗り)の図形が下の層を隠すのは意図した挙動(`blend: 'over'`)。
+- `blend: 'knockout'`(段階 2): その層より下に描かれる層(z 順で前)から、その層の図形と交差する図形を **削除** する(地を透明にしたとき用)。交差は幾何で判定し線幅は含めない。円・楕円は 64 角形、ベジェは 16 分割で近似し、線分どうしの交差か、閉じた図形(polygon, circle, ellipse, Z で閉じる path, 塗りのある図形)の内部に相手の頂点があれば交差とする(`render/knockout.js`)。周期の複製の後で適用し、削除数は `meta.counts.knockout` と警告に出す。SVG・`<pattern>`・Canvas/PNG で同じ。
 
 ### 3.5 精度
 - 計算は倍精度のまま。途中で丸めない。
@@ -125,12 +146,13 @@ docs/CONVENTIONS.md      この文書                               段階 0
 | プリセット(コードあり) | `zc:<9 桁コード>` | `zc:111101002` |
 | 表 3-9 | `zc:t3-9:<1-5>` | `zc:t3-9:2` |
 | 表 4-3 | `zc:t4-3:<記号>`(先頭 `-` は「混じり」) | `zc:t4-3:G`, `zc:t4-3:-Sh` |
-| 表 5 | `zc:t5-<1|2>:<行番号>`(表 4 への alias のみ) | `zc:t5-1:12` |
+| 表 5 | `zc:t5-<1|2|3>:<行番号>`(表 4-1 / 4-2 / 4-3 の同じ行への alias のみ。5-3 は段階 2 で追加) | `zc:t5-1:12`, `zc:t5-3:0` |
 | 層 ID | lowerCamelCase ASCII、spec 内で一意 | `dots`, `ashLines` |
 | SVG 内 ID | `<idPrefix>-clip` など。`idPrefix` 既定は `zc-` + ID の英数字以外を `_` に | `zc-zc_111101002-clip` |
 
 - 正規表現は `core/schema.js` の `ID_PATTERN`, `LAYER_ID_PATTERN`。
 - `resolveId()` が受けるもの: `zc:` ID、9 桁コード、`sym:<記号>`、日本語名(完全一致)。複数一致はエラーで候補を列挙する(Pt, Lp, WR, SF は一意でない)。先頭を黙って選ばない。
+- 照合では、**同じ名前で同じ模様を再掲しているだけの alias** を数えない(段階 2): alias の参照先の連鎖にある項目が同じ照合に一致し、`names.ja` も同じなら、その alias を候補から外す(`registry.dropDuplicateListings`)。表 5 の行(表 4 の同名行への alias)のために `resolveId('盛土')` が曖昧にならず、表 4-2 の項目が返る。名前の違う alias(巨礫岩 → 礫岩)は解決でき、別名の項目が同じ記号を持つ場合(Pt = 高有機質土 / 泥炭)は曖昧のまま。
 - 別名(alias)は `aliasOf` だけを持ち、値を複製しない。逆引き(この模様の別名一覧)は registry が計算する(spec に `aliases` 配列は書かない)。
 - 英語名 `names.en` は出典のある対訳表が決まるまで書かない(創作しない)。
 
@@ -153,8 +175,9 @@ docs/CONVENTIONS.md      この文書                               段階 0
 ### 7.2 LayerContext と LayerResult
 ```js
 ctx = {
-  region: {x: 0, y: 0, width, height},   // pt
-  tileMode: 'frame' | 'period' | 'fit',
+  region: {x: 0, y: 0, width, height},   // pt。period / fit では 1 枚のタイル
+  tileMode: 'frame' | 'period',          // fit のときも 'period'(タイルを描く)。§3.3
+  fit: {x, y},                           // fit の丸め比。frame / period では {x: 1, y: 1}(§3.3)
   strokeWidth,                          // 最終線幅 pt(重なり判定用。描画には使わない)
   origin, jitter, clip,
   rng,                                  // この層専用の乱数列
@@ -168,6 +191,7 @@ LayerResult = {
   skipped: number,           // edgeMode 'whole' や avoid で描かなかった個体数
   warnings: string[],        // 重なり(density.overlapWarning)など
   anchors?: [{x, y, row?, col?}],  // 個体の基準点(avoid / relation 用)
+  pitch?: {x, y},                  // 実際に使った格子ピッチ(pt、密度・fit 適用後)。grid が返し、relation が読む
 }
 ```
 - 何も描けない組合せは空配列を返さず `GeometryError` を投げる(理由を書く)。`empty` 型だけは `primitives: []` を返してよい。
@@ -182,11 +206,18 @@ LayerResult = {
 - 空配列は返さない(`motifs/index.js` が拒否する)。
 - 自由形状(Pt グリフ、鉱物脈、貝殻、角礫、レンズ・かぎ形)は設計書 §1.4 b2 の寸法だけから作る。原本の頂点列は使わない。
 
+### 7.3.1 型ごとの補足(段階 2 で確定)
+- grid の `assign: 'rowcol'`: 巡回番号は (2·col + (row mod 2) + phase) mod n。千鳥 1/2 の格子を半ピッチの列で数えた x 位置の番号(R2 §47)。`core/lattice.js` の `cycleIndex` と grid.js は同じ式。
+- scatter の `sampling`: `'jitteredGrid'`(既定。ほぼ正方の格子の各セルに 1 本)、`'poisson'`(一様な候補を minDistance で棄却。minDistance 必須)、`'uniform'`(独立な一様乱数。minDistance は与えたときだけ適用)。`'uniform'` は他の 2 つの基準として残す。
+- edgeBand の `edgeMode`: `'auto'`(既定)はモチーフが帯幅に収まれば `'whole'`、帯幅より広ければ `'clip'`(R2 §63/§64 の実測ではレンズ 7.05 pt・かぎ形 7.38 pt が帯 6.92 pt より広く、中央に置くと枠を 0.3 pt 未満はみ出す)。
+
 ### 7.4 プリミティブ(`core/primitives.js`)
 `line`, `polyline`, `polygon`, `circle`(r = 半径), `ellipse`(rx, ry = 半径、rotation = 度・数学座標), `path`(M/L/C/Q/Z の絶対座標コマンド列)。`style = {stroke, fill, dash, dashOffset}`、stroke/fill はペイントトークン。線幅・線端・結合は図形ごとに持たず、spec の `stroke` が全体に掛かる。円は真円で描く(多角形近似は `circlePolygonPoints` を明示したときだけ)。
 
 ### 7.5 renderer
-- `renderSVG(id|spec, options)` → `Promise<{svg, meta}>`。`meta.counts = {layers: {processed, skipped, failed}, instances: {placed, skipped}, primitives}`、`meta.warnings`。
+- 描画の流れは 1 本だけ: `render/svg.js` の `buildScene()`(spec + options の解決 → `computeTile` → `computeLayers` → `wrapToRect` → knockout → 上限検査)。SVG(`renderSpecToSVG`)、`<pattern>`(`buildPattern`、出力はタイル 1 枚)、Canvas/PNG(`canvas.planSpec`)はすべてこれを使い、層のループを別に書かない。
+- `renderSVG(id|spec, options)` → `Promise<{svg, meta}>`。`meta.counts = {layers: {processed, skipped, failed}, instances: {placed, skipped}, primitives, knockout}`、`meta.tiling = {mode, periodic, tile, fit, adjust}`、`meta.warnings`。
+- `dpi` の既定は **96**(CSS px。設計書 §5.2。`size.unit: 'px'` の換算と PNG の画素数に使う)。サイトの書き出しは 300 を明示して渡す(設計書 §5.7、CONTRACT §1)。ライブラリの既定は 300 にしない(px 単位の意味が変わるため)。
 - `renderBatch(inputs, options)` → `{results, counts: {processed, skipped, failed}}`。個別の失敗で止まらず、失敗を数えて理由を残す。
 - SVG の構造: `<svg width/height(単位付き) viewBox(pt)>` → `<title>` → `<defs><clipPath>` → 地 `<rect>` → `<g fill="none" stroke=ink stroke-width ...>` の中に層ごとの `<g data-layer="id">` → 枠 `<rect>`。
 - SVG 出力ユーティリティ(`fmt`, `attrs`, `escapeXml`, `pointsAttr`, `pathData`, `primitiveToSVG`, `svgDocument`)は `render/svg.js` にだけ置き、他のファイルで書き直さない。
@@ -258,7 +289,7 @@ spec 検証 → options 検証 → 表ごとの既定(`defaults.defaultsForTable
 | app-2 | `site/ui/presetPicker.js`, `site/ui/paramPanel.js` |
 | app-3 | `site/ui/preview.js`, `site/ui/exportPanel.js` |
 
-- `test/archetypes/stubs.test.js` は未実装の関数が NotImplementedError(担当名付き)を投げることを検査し、実装されたものは自動で skip する。共有ファイルなので段階 1 では誰も編集しない。実装の検査は各自のテストファイルに書く。
+- `test/archetypes/stubs.test.js` は未実装の関数が NotImplementedError(担当名付き)を投げることを検査し、実装されたものは自動で skip する。共有ファイルなので段階 1 では誰も編集しない。実装の検査は各自のテストファイルに書く。段階 2 の時点でスタブは残っていない。
 - core-A の lattice/clip は arch-1, arch-5 が使う。core-A が終わるまで arch 側はローカル関数で書かず、シグネチャどおりに呼んでテストは core-A の完了後に通す。
 
 ## 12. デザイン(サイト UI)
@@ -269,6 +300,7 @@ spec 検証 → options 検証 → 表ごとの既定(`defaults.defaultsForTable
 - 模様のプレビューと書き出しの既定色は §5 の ink `#000000` / paper `#ffffff`。土色は UI だけに使う。ユーザーが模様の色を変えるときは ink/paper の 2 つの入力だけを出す。
 - 画面幅 360 px で横スクロールが出ないこと。左右の余白 16 px。
 - 外部 CDN・フォント・ライブラリを読まない(オフラインで動く)。`site/` から `../src/index.js` を相対 import する。
+- 配信(段階 2): GitHub Pages はリポジトリのルートを配る。`site/` と `src/` が同じ配信ルートに入るので相対 import がそのまま解決する。ルートの `index.html` は `./site/` へ移るだけ。`.nojekyll` で加工を止める(site/app/ui/CONTRACT.md §6)。
 
 ## 13. 命名規則
 - ファイル: lowerCamelCase の `.js`(型ファイルは型名と同じ)。プリセットは `t<表>_<枝番>.js`。
@@ -304,3 +336,6 @@ spec 検証 → options 検証 → 表ごとの既定(`defaults.defaultsForTable
 | JSON Schema ファイル `schema/pattern-spec.1.schema.json` | 作らない。記述子(JS)が唯一の定義 | 2 か所に定義を持つとずれる |
 | `app/`, `tests/`, `NOTICE.md` | `site/`, `test/`, README の節 | 段階 0 の指示 |
 | tileMode 既定 `period` | `renderSVG` は `frame`、`renderSVGPattern` は `period` | 1 枚の画像と継ぎ目なしタイルで用途が違う |
+| 周期が無いと `fit` に落とす(§5.5) | `period` は fit を試し、それも無理なら frame に落として警告。明示の `fit` は落とさずエラー(§3.3) | 既定の `<pattern>` 出力が周期の無い模様で止まらないようにし、明示の指定は黙って変えない |
+| 表 5 は 5-1, 5-2(§1.5.10) | 5-3 も表 4-3 への alias として登録 | 4-3/5-3 の 15 行を R4 と同じ手順で照合し、名称・模様とも 15/15 一致(段階 2) |
+| `resolveId` で alias も同列に照合 | 同名の再掲 alias は候補から外す(§6) | 表 5 の行のために名前が全部曖昧になるのを防ぐ |

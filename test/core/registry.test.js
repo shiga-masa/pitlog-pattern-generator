@@ -84,3 +84,17 @@ test('default registry loads every preset file and reports counts per file', () 
   assert.equal(report.total.failed, 0);
   assert.equal(registry.size, report.total.processed);
 });
+
+test('an alias that re-lists a match under the same name is not counted (table 5 rows); other aliases still count', () => {
+  const r = reg();
+  // a table-5 style row: same name as its target, alias only
+  r.add(alias('zc:t5-1:0', 'zc:111101002', { table: '5-1', names: { ja: '礫岩' } }));
+  assert.equal(r.resolveId('礫岩'), 'zc:111101002');
+  // an alias with its own name resolves to itself
+  assert.equal(r.resolveId('巨礫岩'), 'zc:111101102');
+  // two different names sharing a symbol stay ambiguous
+  assert.throws(() => r.resolveId('sym:Pt'), (e) => e instanceof ResolveError && /ambiguous/.test(e.message));
+  // an alias with a different name and the same symbol as its target stays a separate candidate
+  r.add(alias('zc:111300012', 'zc:111300002', { symbol: 'Pt', names: { ja: '頁岩もどき' } }));
+  assert.throws(() => r.resolveId('sym:Pt'), (e) => e.candidates.length === 3);
+});

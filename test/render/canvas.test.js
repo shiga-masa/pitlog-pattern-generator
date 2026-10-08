@@ -8,6 +8,7 @@ import { makeEnv } from '../../src/core/validate.js';
 import { ARCHETYPES } from '../../src/archetypes/index.js';
 import { NotImplementedError, GeometryError, ZcError } from '../../src/core/errors.js';
 import { spec } from '../fixtures/specs.js';
+import { renderSpecToSVG } from '../../src/render/svg.js';
 
 const DEG = Math.PI / 180;
 const INK = '#000000';
@@ -257,8 +258,13 @@ test('planSpec: density 2 halves the pitch and the motif but keeps the line widt
   assert.equal(p.layers[0].primitives.length, 3);
 });
 
-test('planSpec: tileMode fit is not implemented here and names its owner', () => {
-  assert.throws(() => planSpec(spec(), { tileMode: 'fit' }, { env: fakeEnv }), (e) => e instanceof NotImplementedError && e.owner === 'render-1');
+test('planSpec: every tileMode goes through the shared pipeline (same tiling and primitives as the SVG output)', () => {
+  for (const tileMode of ['frame', 'period']) {
+    const p = planSpec(spec(), { tileMode });
+    const s = renderSpecToSVG(spec(), { tileMode });
+    assert.deepEqual(p.meta.tiling, s.meta.tiling, tileMode);
+    assert.equal(p.layers.reduce((n, l) => n + l.primitives.length, 0), s.meta.counts.primitives, tileMode);
+  }
 });
 
 test('drawPrimitives: draws a given primitive list through the context', () => {

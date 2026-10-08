@@ -133,9 +133,17 @@ test('period mode uses the common period of several layers', () => {
   assert.equal(r.meta.tileMode, 'period');
 });
 
-test('period mode with no common period is refused with the layers named, not silently fitted', () => {
+test('period mode with no common period and no fit within 5 % falls back to the frame with a warning naming the layers', () => {
   const s = spec({ layers: [grid('a', 11.22, 9.27, 2), grid('b', 10, 9.27, 2)] });
-  assert.throws(() => buildPattern(s, {}, { env }), (e) => e instanceof GeometryError && /no common period/.test(e.message) && /a 11\.22x9\.27/.test(e.message));
+  const r = buildPattern(s, {}, { env });
+  assert.equal(r.meta.tileMode, 'frame');
+  assert.equal(r.meta.periodic, false);
+  assert.ok(r.meta.warnings.some((w) => /no common period/.test(w) && /a 11\.22x9\.27/.test(w)), r.meta.warnings.join('\n'));
+});
+
+test('explicit fit with no common period is refused with the layers named', () => {
+  const s = spec({ layers: [grid('a', 11.22, 9.27, 2), grid('b', 10, 9.27, 2)] });
+  assert.throws(() => buildPattern(s, { tileMode: 'fit' }, { env }), (e) => e instanceof GeometryError && /no common period/.test(e.message) && /a 11\.22x9\.27/.test(e.message));
 });
 
 test('fit: an integer count of periods fills the target within 5 %', () => {

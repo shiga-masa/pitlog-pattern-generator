@@ -9,7 +9,8 @@
  *   - band k is a row of motifs at base_k + j * S, j in Z, where S = step (or alongPitch * dir(angle))
  *   - base_k = anchor + bandOffset * n + (k - (bands-1)/2) * D, n = dir(angle + 90) (upper-left is +)
  *     D = n * bandSpacing + bandPhase * S, or D = bandShift when bandShift is given
- *   - the anchor is the region centre (origin 'center') or the point given as origin {x, y}
+ *   - the anchor is the region centre (origin 'center') or the point given as origin {x, y},
+ *     shifted by layer.offset (stage 2)
  */
 
 import { GeometryError, LimitError } from '../core/errors.js';
@@ -18,6 +19,7 @@ import { keepInstance } from '../core/clip.js';
 import { bboxIntersects, dir, DEG } from '../core/geom.js';
 import { bbox, bboxOf, transformPrimitive } from '../core/primitives.js';
 import { angle, count, enumOf, len, obj, ratio, union, vec } from '../core/schema.js';
+import { offsetOf } from '../core/fit.js';
 
 export const ARCHETYPE = 'diagonalBand';
 
@@ -133,6 +135,8 @@ export function render(layer, ctx) {
   else if (ctx.origin === 'topLeft') throw new GeometryError(`layer ${id}: origin 'topLeft' is not defined for diagonalBand (the bands run through the region); use 'center' or {x, y}`);
   else if (ctx.origin && typeof ctx.origin === 'object') c = { x: ctx.origin.x, y: ctx.origin.y };
   else throw new GeometryError(`layer ${id}: unknown origin ${JSON.stringify(ctx.origin)}`);
+  const off = offsetOf(layer);
+  c = { x: c.x + off.x, y: c.y + off.y };
 
   // Band-to-band vector D.
   const N = p.bands;

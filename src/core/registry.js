@@ -113,15 +113,36 @@ export class PatternRegistry {
   }
 
   /**
+   * Remove alias entries that only re-list another match under the same name (CONVENTIONS §6):
+   * an alias is dropped when a spec on its aliasOf chain is itself among the matches and has the
+   * same names.ja. Table 5 rows (aliases of the table 4 row with the same name) therefore do not make
+   * a name ambiguous, an alias with its own name (巨礫岩 -> 礫岩) stays resolvable, and a symbol shared
+   * by two different names (Pt = 高有機質土 / 泥炭) stays ambiguous.
+   * @param {object[]} matches registered specs @returns {object[]}
+   */
+  dropDuplicateListings(matches) {
+    if (matches.length < 2) return matches;
+    const byId = new Map(matches.map((s) => [s.id, s]));
+    return matches.filter((s) => {
+      if (!s.aliasOf) return true;
+      const { chain } = this.resolveAlias(s.id);
+      return !chain.slice(1).some((id) => byId.has(id) && byId.get(id).names.ja === s.names.ja);
+    });
+  }
+
+  /**
    * Resolve a query to a canonical id. Accepted forms:
    *   'zc:...' id, 9-digit code, 'sym:<symbol>', Japanese name (exact).
-   * Several matches -> ResolveError listing them; none -> ResolveError with near candidates.
+   * Alias entries that merely re-list a matching entry under the same name are not counted
+   * (dropDuplicateListings): resolveId('盛土') is the table 4-2 entry, not ambiguous with its table 5-2 row.
+   * Several remaining matches -> ResolveError listing them; none -> ResolveError with near candidates.
    */
   resolveId(query) {
     if (typeof query !== 'string' || !query.trim()) throw new ResolveError(`resolveId: empty query ${JSON.stringify(query)}`);
     const q = query.trim();
     const all = [...this.specs.values()];
-    const one = (matches, what) => {
+    const one = (found, what) => {
+      const matches = this.dropDuplicateListings(found);
       if (matches.length === 1) return matches[0].id;
       if (matches.length > 1) throw new ResolveError(`${what} ${JSON.stringify(q)} is ambiguous (${matches.length} presets)`, matches.map((s) => `${s.id} (${s.names.ja})`));
       return null;

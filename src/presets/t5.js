@@ -1,5 +1,5 @@
 /**
- * Presets for R4 (tables 5-1, 5-2: aliases of table 4 only).
+ * Presets for R4 (tables 5-1, 5-2, 5-3: aliases of table 4 only).
  * Owner: preset-5 (stage 1). Rules: docs/CONVENTIONS.md §6 (ids), §10 (presets).
  *
  * One object per preset. Every value comes from the cited report section; never invent one.
@@ -7,7 +7,8 @@
  * Each row is an alias of the table 4 row at the same position (analysis/t4_vs_t5_comparison.md, 171/171 match).
  * Row number n = 0-based position of the row in the table (the 行 column of that comparison).
  * Generated from index.csv (txt_* columns) by a one-off script; no coordinates or images are copied.
- * Table 5-3 (15 rows) is not included: the schema has no table 5-3 (TABLES, ID_PATTERN). See the stage-1 report.
+ * Table 5-3 (15 rows, ids zc:t5-3:<row>) was added in stage 2: each row is an alias of the table 4-3 row at the
+ * same position (same comparison procedure as R4, applied to 4-3/5-3: 15/15 rows identical in names and drawing).
  */
 
 /** @type {import('../core/types.js').PatternSpec[]} */
@@ -2575,6 +2576,231 @@ export const PRESETS = [
       "section": "照合表",
       "measured": true,
       "notes": "表5-2 行 5 (t5_2_p071_h1_r05) = 表4-2 行 5 (t4_2_p057_h1_r05)。名称・コード・文字記号一致、模様 完全一致(R4)"
+    }
+  },
+  {
+    "schema": "zc-pattern/1.0.0",
+    "id": "zc:t5-3:0",
+    "table": "5-3",
+    "names": {
+      "ja": "礫質"
+    },
+    "aliasOf": "zc:t4-3:G",
+    "provenance": {
+      "doc": "R4",
+      "section": "照合表(表5-3 は段階 2 で同手順)",
+      "measured": true,
+      "notes": "表5-3 行 0 (t5_3_p072_h0_r00) = 表4-3 行 0 (t4_3_p058_h0_r00)。名称・記号一致、模様 完全一致(R4 の照合手順 codes/s91a_compare_t4_t5_tmp.py を 4-3/5-3 に適用、15/15 行完全一致)"
+    }
+  },
+  {
+    "schema": "zc-pattern/1.0.0",
+    "id": "zc:t5-3:1",
+    "table": "5-3",
+    "names": {
+      "ja": "砂質"
+    },
+    "aliasOf": "zc:t4-3:S",
+    "provenance": {
+      "doc": "R4",
+      "section": "照合表(表5-3 は段階 2 で同手順)",
+      "measured": true,
+      "notes": "表5-3 行 1 (t5_3_p072_h0_r01) = 表4-3 行 1 (t4_3_p058_h0_r01)。名称・記号一致、模様 完全一致(R4 の照合手順 codes/s91a_compare_t4_t5_tmp.py を 4-3/5-3 に適用、15/15 行完全一致)"
+    }
+  },
+  {
+    "schema": "zc-pattern/1.0.0",
+    "id": "zc:t5-3:2",
+    "table": "5-3",
+    "names": {
+      "ja": "シルト質"
+    },
+    "aliasOf": "zc:t4-3:M",
+    "provenance": {
+      "doc": "R4",
+      "section": "照合表(表5-3 は段階 2 で同手順)",
+      "measured": true,
+      "notes": "表5-3 行 2 (t5_3_p072_h0_r02) = 表4-3 行 2 (t4_3_p058_h0_r02)。名称・記号一致、模様 完全一致(R4 の照合手順 codes/s91a_compare_t4_t5_tmp.py を 4-3/5-3 に適用、15/15 行完全一致)"
+    }
+  },
+  {
+    "schema": "zc-pattern/1.0.0",
+    "id": "zc:t5-3:3",
+    "table": "5-3",
+    "names": {
+      "ja": "粘土質"
+    },
+    "aliasOf": "zc:t4-3:C",
+    "provenance": {
+      "doc": "R4",
+      "section": "照合表(表5-3 は段階 2 で同手順)",
+      "measured": true,
+      "notes": "表5-3 行 3 (t5_3_p072_h0_r03) = 表4-3 行 3 (t4_3_p058_h0_r03)。名称・記号一致、模様 完全一致(R4 の照合手順 codes/s91a_compare_t4_t5_tmp.py を 4-3/5-3 に適用、15/15 行完全一致)"
+    }
+  },
+  {
+    "schema": "zc-pattern/1.0.0",
+    "id": "zc:t5-3:4",
+    "table": "5-3",
+    "names": {
+      "ja": "有機質"
+    },
+    "aliasOf": "zc:t4-3:O",
+    "provenance": {
+      "doc": "R4",
+      "section": "照合表(表5-3 は段階 2 で同手順)",
+      "measured": true,
+      "notes": "表5-3 行 4 (t5_3_p072_h0_r04) = 表4-3 行 4 (t4_3_p058_h0_r04)。名称・記号一致、模様 完全一致(R4 の照合手順 codes/s91a_compare_t4_t5_tmp.py を 4-3/5-3 に適用、15/15 行完全一致)"
+    }
+  },
+  {
+    "schema": "zc-pattern/1.0.0",
+    "id": "zc:t5-3:5",
+    "table": "5-3",
+    "names": {
+      "ja": "火山灰質"
+    },
+    "aliasOf": "zc:t4-3:V",
+    "provenance": {
+      "doc": "R4",
+      "section": "照合表(表5-3 は段階 2 で同手順)",
+      "measured": true,
+      "notes": "表5-3 行 5 (t5_3_p072_h0_r05) = 表4-3 行 5 (t4_3_p058_h0_r05)。名称・記号一致、模様 完全一致(R4 の照合手順 codes/s91a_compare_t4_t5_tmp.py を 4-3/5-3 に適用、15/15 行完全一致)"
+    }
+  },
+  {
+    "schema": "zc-pattern/1.0.0",
+    "id": "zc:t5-3:6",
+    "table": "5-3",
+    "names": {
+      "ja": "玉石混じり"
+    },
+    "aliasOf": "zc:t4-3:-B",
+    "provenance": {
+      "doc": "R4",
+      "section": "照合表(表5-3 は段階 2 で同手順)",
+      "measured": true,
+      "notes": "表5-3 行 6 (t5_3_p072_h1_r00) = 表4-3 行 6 (t4_3_p058_h1_r00)。名称・記号一致、模様 完全一致(R4 の照合手順 codes/s91a_compare_t4_t5_tmp.py を 4-3/5-3 に適用、15/15 行完全一致)"
+    }
+  },
+  {
+    "schema": "zc-pattern/1.0.0",
+    "id": "zc:t5-3:7",
+    "table": "5-3",
+    "names": {
+      "ja": "礫混じり"
+    },
+    "aliasOf": "zc:t4-3:-G",
+    "provenance": {
+      "doc": "R4",
+      "section": "照合表(表5-3 は段階 2 で同手順)",
+      "measured": true,
+      "notes": "表5-3 行 7 (t5_3_p072_h1_r01) = 表4-3 行 7 (t4_3_p058_h1_r01)。名称・記号一致、模様 完全一致(R4 の照合手順 codes/s91a_compare_t4_t5_tmp.py を 4-3/5-3 に適用、15/15 行完全一致)"
+    }
+  },
+  {
+    "schema": "zc-pattern/1.0.0",
+    "id": "zc:t5-3:8",
+    "table": "5-3",
+    "names": {
+      "ja": "砂混じり"
+    },
+    "aliasOf": "zc:t4-3:-S",
+    "provenance": {
+      "doc": "R4",
+      "section": "照合表(表5-3 は段階 2 で同手順)",
+      "measured": true,
+      "notes": "表5-3 行 8 (t5_3_p072_h1_r02) = 表4-3 行 8 (t4_3_p058_h1_r02)。名称・記号一致、模様 完全一致(R4 の照合手順 codes/s91a_compare_t4_t5_tmp.py を 4-3/5-3 に適用、15/15 行完全一致)"
+    }
+  },
+  {
+    "schema": "zc-pattern/1.0.0",
+    "id": "zc:t5-3:9",
+    "table": "5-3",
+    "names": {
+      "ja": "シルト混じり"
+    },
+    "aliasOf": "zc:t4-3:-M",
+    "provenance": {
+      "doc": "R4",
+      "section": "照合表(表5-3 は段階 2 で同手順)",
+      "measured": true,
+      "notes": "表5-3 行 9 (t5_3_p072_h1_r03) = 表4-3 行 9 (t4_3_p058_h1_r03)。名称・記号一致、模様 完全一致(R4 の照合手順 codes/s91a_compare_t4_t5_tmp.py を 4-3/5-3 に適用、15/15 行完全一致)"
+    }
+  },
+  {
+    "schema": "zc-pattern/1.0.0",
+    "id": "zc:t5-3:10",
+    "table": "5-3",
+    "names": {
+      "ja": "粘土混じり"
+    },
+    "aliasOf": "zc:t4-3:-C",
+    "provenance": {
+      "doc": "R4",
+      "section": "照合表(表5-3 は段階 2 で同手順)",
+      "measured": true,
+      "notes": "表5-3 行 10 (t5_3_p072_h1_r04) = 表4-3 行 10 (t4_3_p058_h1_r04)。名称・記号一致、模様 完全一致(R4 の照合手順 codes/s91a_compare_t4_t5_tmp.py を 4-3/5-3 に適用、15/15 行完全一致)"
+    }
+  },
+  {
+    "schema": "zc-pattern/1.0.0",
+    "id": "zc:t5-3:11",
+    "table": "5-3",
+    "names": {
+      "ja": "腐植物混じり"
+    },
+    "aliasOf": "zc:t4-3:-O",
+    "provenance": {
+      "doc": "R4",
+      "section": "照合表(表5-3 は段階 2 で同手順)",
+      "measured": true,
+      "notes": "表5-3 行 11 (t5_3_p072_h1_r05) = 表4-3 行 11 (t4_3_p058_h1_r05)。名称・記号一致、模様 完全一致(R4 の照合手順 codes/s91a_compare_t4_t5_tmp.py を 4-3/5-3 に適用、15/15 行完全一致)"
+    }
+  },
+  {
+    "schema": "zc-pattern/1.0.0",
+    "id": "zc:t5-3:12",
+    "table": "5-3",
+    "names": {
+      "ja": "火山灰混じり"
+    },
+    "aliasOf": "zc:t4-3:-V",
+    "provenance": {
+      "doc": "R4",
+      "section": "照合表(表5-3 は段階 2 で同手順)",
+      "measured": true,
+      "notes": "表5-3 行 12 (t5_3_p072_h1_r06) = 表4-3 行 12 (t4_3_p058_h1_r06)。名称・記号一致、模様 完全一致(R4 の照合手順 codes/s91a_compare_t4_t5_tmp.py を 4-3/5-3 に適用、15/15 行完全一致)"
+    }
+  },
+  {
+    "schema": "zc-pattern/1.0.0",
+    "id": "zc:t5-3:13",
+    "table": "5-3",
+    "names": {
+      "ja": "貝殻混じり"
+    },
+    "aliasOf": "zc:t4-3:-Sh",
+    "provenance": {
+      "doc": "R4",
+      "section": "照合表(表5-3 は段階 2 で同手順)",
+      "measured": true,
+      "notes": "表5-3 行 13 (t5_3_p072_h1_r07) = 表4-3 行 13 (t4_3_p058_h1_r07)。名称・記号一致、模様 完全一致(R4 の照合手順 codes/s91a_compare_t4_t5_tmp.py を 4-3/5-3 に適用、15/15 行完全一致)"
+    }
+  },
+  {
+    "schema": "zc-pattern/1.0.0",
+    "id": "zc:t5-3:14",
+    "table": "5-3",
+    "names": {
+      "ja": "サンゴ混じり"
+    },
+    "aliasOf": "zc:t4-3:-Co",
+    "provenance": {
+      "doc": "R4",
+      "section": "照合表(表5-3 は段階 2 で同手順)",
+      "measured": true,
+      "notes": "表5-3 行 14 (t5_3_p072_h1_r08) = 表4-3 行 14 (t4_3_p058_h1_r08)。名称・記号一致、模様 完全一致(R4 の照合手順 codes/s91a_compare_t4_t5_tmp.py を 4-3/5-3 に適用、15/15 行完全一致)"
     }
   }
 ];

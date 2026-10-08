@@ -6,6 +6,7 @@
  */
 
 import { obj } from '../core/schema.js';
+import { fitPeriod } from '../core/fit.js';
 
 export const ARCHETYPE = 'empty';
 
@@ -36,5 +37,5 @@ export function render(layer, ctx) {
  * @returns {{w:number, h:number} | null}
  */
 export function period(layer, ctx) {
-  return { w: ctx.region.width, h: ctx.region.height };
+  return fitPeriod({ w: ctx.region.width, h: ctx.region.height }, ctx);
 }

@@ -132,9 +132,12 @@ test('cycleIndex with assign row is constant along a row and changes with each r
   assert.equal(cycleIndex(2, 0, 2, 'row', 1), 1);
 });
 
-test('cycleIndex with assign rowcol is answered only for a single motif', () => {
+test('cycleIndex with assign rowcol uses the x-position index 2*col + row parity (R2 §47, same rule as grid.js)', () => {
   assert.equal(cycleIndex(3, 7, 1, 'rowcol', 0), 0);
-  assert.throws(() => cycleIndex(0, 0, 2, 'rowcol', 0), GeometryError);
+  assert.equal(cycleIndex(0, 0, 2, 'rowcol', 0), 0);
+  assert.equal(cycleIndex(1, 0, 2, 'rowcol', 0), 1);
+  assert.equal(cycleIndex(0, 1, 3, 'rowcol', 0), 2);
+  assert.equal(cycleIndex(1, 1, 3, 'rowcol', 1), 1);
 });
 
 test('cycleIndex rejects unknown assign values with the candidates listed', () => {

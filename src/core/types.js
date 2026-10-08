@@ -29,7 +29,9 @@
  * @property {'grid'|'brick'|'hatch'|'frameDiagonal'|'wave'|'scatter'|'diagonalBand'|'edgeBand'|'symbol'|'empty'} archetype
  * @property {Motif} [motif]
  * @property {object} [params] archetype parameters (PARAMS of the archetype file)
- * @property {{x:number,y:number}} [offset] pt, density-scaled
+ * @property {{x:number,y:number}} [offset] pt, density-scaled. Shifts the layer's anchor (CONVENTIONS §3.1):
+ *   grid lattice, hatch/brick anchor, wave reference point, diagonalBand anchor, symbol anchor,
+ *   scatter segments (after placement), edgeBand rows (y only). frameDiagonal rejects a non-zero offset.
  * @property {number} [seed] uint32 label mixed with the spec seed
  * @property {number} [z] draw order (ascending, ties keep array order)
  * @property {number} [densityScale]
@@ -55,7 +57,8 @@
  * @property {'paper'|'none'} [ground]
  * @property {boolean} [clip]
  * @property {number} [seed]
- * @property {'center'|'topLeft'|{x:number,y:number}} [origin]
+ * @property {'center'|'topLeft'|{x:number,y:number}} [origin] spec-level anchor shared by every layer
+ *   (CONVENTIONS §3.1; the meaning per archetype is listed there)
  * @property {number} [jitter]
  * @property {Layer[]} [layers] required unless aliasOf
  */
@@ -68,7 +71,8 @@
 /**
  * @typedef {object} LayerContext
  * @property {{x:number,y:number,width:number,height:number}} region drawing region (pt), x = y = 0
- * @property {'frame'|'period'|'fit'} tileMode
+ * @property {'frame'|'period'|'fit'} tileMode 'period' also in fit mode (the region is then one fitted tile)
+ * @property {{x:number,y:number}} fit period factors of tileMode 'fit' ({x:1,y:1} otherwise; core/fit.js)
  * @property {number} strokeWidth final stroke width (pt)
  * @property {'center'|'topLeft'|{x:number,y:number}} origin
  * @property {number} jitter pt
@@ -86,6 +90,8 @@
  * @property {number} skipped instances not drawn (edgeMode 'whole', avoid); never hidden
  * @property {string[]} warnings
  * @property {Array<{x:number,y:number,row?:number,col?:number}>} [anchors] instance anchors (for avoid / relation)
+ * @property {{x:number,y:number}} [pitch] lattice pitch actually used (pt, after density and fit); grid layers
+ *   provide it, and a later grid layer with `relation` reads it (relation.to must be a grid layer)
  */
 
 /**
@@ -93,11 +99,14 @@
  * @property {number} width output width in `unit`
  * @property {number} height
  * @property {'pt'|'mm'|'px'} unit
+ * @property {number} dpi px per inch used for 'px' sizes and PNG (default 96 = CSS px; the site passes 300)
  * @property {{width:number,height:number}} region pt
  * @property {number} density
  * @property {number} strokeWidth pt
  * @property {string[]} warnings
- * @property {{layers:{processed:number,skipped:number,failed:number}, instances:{placed:number,skipped:number}, primitives:number}} counts
+ * @property {{mode:'frame'|'period'|'fit', periodic:boolean, tile:{width:number,height:number}, fit:{x:number,y:number}, adjust:(object|null)}} tiling
+ * @property {{layers:{processed:number,skipped:number,failed:number}, instances:{placed:number,skipped:number}, primitives:number, knockout:Record<string,number>}} counts
+ *   primitives = drawn after periodic copies and knockout; knockout = primitives removed per lower layer
  */
 
 /**

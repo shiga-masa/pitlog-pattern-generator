@@ -8,6 +8,9 @@
  * is along the normal n = dir(angle - 90). Every line is a translate of one curve by k * lineSpacing * n,
  * so the picture is invariant under wavelength * u and lineSpacing * n (period()).
  * amplitude is the HALF crest-to-trough height (PARAMS). The trapezoid's full rise is therefore 2 * amplitude.
+ * Stage 2: layer.offset shifts the reference point R; ctx.fit is honoured by drawing unfitted and
+ * stretching (core/fit.js drawStretched); period() is scaled by the fit and is null when the lines do
+ * not repeat (a margin, or a finite `lines` count), as for hatch.
  */
 
 import { GeometryError } from '../core/errors.js';
@@ -16,6 +19,7 @@ import { dir } from '../core/geom.js';
 import { polyline } from '../core/primitives.js';
 import { clipPolyline } from '../core/clip.js';
 import { angle, autoCount, enumOf, len, margin, obj, ratio, size } from '../core/schema.js';
+import { drawStretched, fitPeriod, offsetOf } from '../core/fit.js';
 
 const OWNER = 'arch-3';
 
@@ -61,6 +65,10 @@ const STYLE = Object.freeze({ stroke: 'ink', fill: 'none' });
  * @returns {import('../core/types.js').LayerResult}
  */
 export function render(layer, ctx) {
+  return drawStretched(ctx, (c) => renderUnfitted(layer, c));
+}
+
+function renderUnfitted(layer, ctx) {
   const p = layer.params;
   const region = ctx.region;
   if (!(region.width > 0 && region.height > 0)) throw new GeometryError(`wave ${layer.id}: region must have positive size`);
@@ -73,7 +81,9 @@ export function render(layer, ctx) {
     warnings.push(`layer ${layer.id}: lines=${p.lines} is a finite count, so the period tile is not seamless (the period assumes infinitely many lines)`);
   }
 
-  const R = anchorPoint(ctx.origin, region);
+  const R0 = anchorPoint(ctx.origin, region);
+  const off = offsetOf(layer);
+  const R = { x: R0.x + off.x, y: R0.y + off.y };
   const u = dir(p.angle);
   const n = dir(p.angle - 90);
   const s = p.lineSpacing;
@@ -126,7 +136,14 @@ export function render(layer, ctx) {
  * @returns {{w:number, h:number} | null}
  */
 export function period(layer, ctx) {
+  return fitPeriod(unfittedPeriod(layer), ctx);
+}
+
+function unfittedPeriod(layer) {
   const p = layer.params;
+  const m = p.margin;
+  const hasMargin = typeof m === 'number' ? m !== 0 : Boolean(m && (m.left || m.right || m.top || m.bottom));
+  if (hasMargin || p.lines !== 'auto') return null; // a margin or a finite line count does not repeat
   const u = dir(p.angle);
   const n = dir(p.angle - 90);
   const L = p.wavelength;

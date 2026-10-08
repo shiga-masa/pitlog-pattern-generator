@@ -3,12 +3,14 @@
  *
  * Edit only this file (and test/archetypes/symbol.test.js). PARAMS is the single source of truth for
  * this archetype's parameters: validation, defaults and density scaling all read it.
+ * Stage 2: layer.offset is added to the anchor; spec.origin is not used (params.anchor decides).
  */
 
 import { GeometryError } from '../core/errors.js';
 import { arr, enumOf, obj, ratio, vec } from '../core/schema.js';
 import { bboxInside } from '../core/geom.js';
 import { bboxOf, transformPrimitive } from '../core/primitives.js';
+import { fitPeriod, offsetOf } from '../core/fit.js';
 
 export const ARCHETYPE = 'symbol';
 
@@ -35,7 +37,9 @@ export function render(layer, ctx) {
   const p = layer.params;
   const region = ctx.region;
   // 'center': the motif's bounding-box centre goes to the region centre. 'topLeft': to the region's (0, 0).
-  const base = p.anchor === 'center' ? { x: region.width / 2, y: region.height / 2 } : { x: region.x, y: region.y };
+  const off = offsetOf(layer);
+  const base0 = p.anchor === 'center' ? { x: region.width / 2, y: region.height / 2 } : { x: region.x, y: region.y };
+  const base = { x: base0.x + off.x, y: base0.y + off.y };
   const local = ctx.buildMotif(layer.motif);
   const primitives = [];
   const anchors = [];
@@ -68,5 +72,5 @@ export function render(layer, ctx) {
  * @returns {{w:number, h:number} | null}
  */
 export function period(layer, ctx) {
-  return { w: ctx.region.width, h: ctx.region.height };
+  return fitPeriod({ w: ctx.region.width, h: ctx.region.height }, ctx);
 }

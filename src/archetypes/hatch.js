@@ -6,16 +6,19 @@
  * cycle[k mod n]. A dashed line is split into separate dash primitives whose phase is measured from
  * the foot of the anchor on that line, so dashes of all dashed lines line up. Everything is clipped
  * geometrically to the region inset by `margin`.
+ * Stage 2: layer.offset shifts the anchor; ctx.fit is honoured by drawing unfitted and stretching
+ * (core/fit.js drawStretched); period() is scaled by the fit.
  *
  * Edit only this file (and test/archetypes/hatch.test.js). PARAMS is the single source of truth for
  * this archetype's parameters: validation, defaults and density scaling all read it.
  */
 
 import { GeometryError } from '../core/errors.js';
-import { clipSegment } from '../core/clip.js';
+import { clipSegmentProper as clipSegment } from '../core/clip.js';
 import { dir, rotatePoint } from '../core/geom.js';
 import { line } from '../core/primitives.js';
 import { angle, arr, enumOf, len, margin, obj, ratio, size, union } from '../core/schema.js';
+import { drawStretched, fitPeriod, offsetOf } from '../core/fit.js';
 
 export const ARCHETYPE = 'hatch';
 
@@ -171,6 +174,10 @@ function commonPeriod(as) {
  * @returns {import('../core/types.js').LayerResult}
  */
 export function render(layer, ctx) {
+  return drawStretched(ctx, (c) => renderUnfitted(layer, c));
+}
+
+function renderUnfitted(layer, ctx) {
   const p = layer.params;
   const region = ctx.region;
   const angles = Array.isArray(p.angle) ? p.angle : [p.angle];
@@ -187,7 +194,9 @@ export function render(layer, ctx) {
   if (p.spacing < ctx.strokeWidth) warnings.push(`hatch: spacing ${p.spacing} pt is not larger than stroke width ${ctx.strokeWidth} pt; lines will merge`);
 
   const rect = insetRect(region, p.margin);
-  const A = anchorOf(ctx.origin, region);
+  const A0 = anchorOf(ctx.origin, region);
+  const off = offsetOf(layer);
+  const A = { x: A0.x + off.x, y: A0.y + off.y };
   const dash = dashed ? { len: p.dash, period: p.dash + p.gap, phase: p.dashPhase } : null;
   const s = p.spacing;
 
@@ -220,6 +229,10 @@ export function render(layer, ctx) {
  * @returns {{w:number, h:number} | null}
  */
 export function period(layer, ctx) {
+  return fitPeriod(unfittedPeriod(layer), ctx);
+}
+
+function unfittedPeriod(layer) {
   const p = layer.params;
   const m = marginSides(p.margin);
   if (m.left || m.right || m.top || m.bottom) return null;

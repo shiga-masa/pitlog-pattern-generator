@@ -99,11 +99,18 @@ test('t4_3 provenance has a section on every preset', () => {
   }
 });
 
-test('t5 has 171 aliases (5-1: 165, 5-2: 6) and no table 5-3 entries', () => {
-  assert.equal(T5.length, 171);
+test('t5 has 186 aliases (5-1: 165, 5-2: 6, 5-3: 15)', () => {
+  assert.equal(T5.length, 186);
   assert.equal(T5.filter((p) => p.table === '5-1').length, 165);
   assert.equal(T5.filter((p) => p.table === '5-2').length, 6);
-  assert.equal(T5.filter((p) => p.table === '5-3').length, 0);
+  assert.equal(T5.filter((p) => p.table === '5-3').length, 15);
+});
+
+test('table 5-3 row k is an alias of the table 4-3 row k (same order as the source table)', () => {
+  const t53 = T5.filter((p) => p.table === '5-3');
+  t53.forEach((p, k) => assert.equal(p.id, `zc:t5-3:${k}`));
+  const ids = ['G', 'S', 'M', 'C', 'O', 'V', '-B', '-G', '-S', '-M', '-C', '-O', '-V', '-Sh', '-Co'].map((s) => `zc:t4-3:${s}`);
+  assert.deepEqual(t53.map((p) => p.aliasOf), ids);
 });
 
 test('t5 entries are aliases only: aliasOf, no drawing fields', () => {
@@ -114,10 +121,10 @@ test('t5 entries are aliases only: aliasOf, no drawing fields', () => {
   }
 });
 
-test('t5 ids are unique and follow zc:t5-<1|2>:<row>', () => {
+test('t5 ids are unique and follow zc:t5-<1|2|3>:<row>', () => {
   const ids = T5.map((p) => p.id);
   assert.equal(new Set(ids).size, ids.length);
-  for (const p of T5) assert.match(p.id, /^zc:t5-[12]:\d{1,3}$/, p.id);
+  for (const p of T5) assert.match(p.id, /^zc:t5-[123]:\d{1,3}$/, p.id);
 });
 
 test('every t5 alias passes validateSpec', () => {

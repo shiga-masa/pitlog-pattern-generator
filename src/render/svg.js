@@ -1,7 +1,8 @@
 /**
  * SVG output: primitive serialisation utilities (stage 0, complete) and the renderSVG pipeline.
- * Owner: stage 0 for the utilities; render-1 (stage 1) may extend renderSVG (tileMode 'fit',
- * blend 'knockout') but must keep the output contract in CONVENTIONS §3, §5, §7.
+ * Owner: stage 0 for the utilities, render-1 for the tiling, stage 2 (integration) for buildScene().
+ * buildScene() is the one pipeline every backend draws from (SVG here, <pattern> in svgPattern.js,
+ * Canvas/PNG in canvas.js): resolve -> tile -> layers -> periodic copies -> knockout.
  *
  * Output contract:
  *  - viewBox = region in pt, origin top-left; width/height carry the unit (pt|mm|px).
@@ -12,6 +13,7 @@
 
 import { SVG_DECIMALS, LIMITS } from '../core/defaults.js';
 import { NotImplementedError, LimitError, GeometryError, ZcError, makeCounts } from '../core/errors.js';
+import { applyKnockout } from './knockout.js';
 import { normalizeColor } from '../core/colors.js';
 import { validatePrimitive, bbox, transformPrimitive } from '../core/primitives.js';
 import { resolveSpec } from '../core/resolve.js';
@@ -206,6 +208,9 @@ function checkPrimitiveLimit(n, label) {
 /**
  * Render every layer of a resolved spec into `region`. Returns the primitives of the domain
  * (each individual once, straddlers included); no periodic copies are made here.
+ * Period-tile contract (CONVENTIONS §3.3): with tileMode 'period' an archetype draws every individual
+ * exactly once inside the tile (lattice positions wrapped into [0, w) x [0, h), lines clipped to the
+ * tile); the copies across the tile edges are made by wrapToRect() only, never by the archetype.
  * @returns {{results: Record<string, object>, counts: object, warnings: string[]}}
  */
 export function computeLayers(drawSpec, env, render, { region, tileMode, fit = UNIT_FIT }) {
@@ -214,7 +219,6 @@ export function computeLayers(drawSpec, env, render, { region, tileMode, fit = U
   const results = {};
   for (const layer of drawSpec.layers) {
     const arch = env.archetypes[layer.archetype];
-    if (layer.blend === 'knockout') throw new NotImplementedError(`blend "knockout" (layer ${layer.id})`, 'render-1');
     const ctx = makeLayerCtx(drawSpec, render, layer, { region, tileMode, fit, results: { ...results } });
     let res;
     try {
@@ -224,7 +228,8 @@ export function computeLayers(drawSpec, env, render, { region, tileMode, fit = U
       throw e; // a single render never returns a partial picture
     }
     if (res.primitives.length === 0 && layer.archetype !== 'empty') warnings.push(`layer ${layer.id}: produced no primitives (placed ${res.placed}, skipped ${res.skipped})`);
-    warnings.push(...res.warnings.map((w) => `layer ${layer.id}: ${w}`));
+    // archetypes may already name the layer; the prefix is written once
+    warnings.push(...res.warnings.map((w) => (w.startsWith(`layer ${layer.id}:`) ? w : `layer ${layer.id}: ${w}`)));
     counts.layers.processed++;
     counts.instances.placed += res.placed;
     counts.instances.skipped += res.skipped;
@@ -335,8 +340,10 @@ export function fitTiling(drawSpec, env, render, target, label = 'tileMode "fit"
  * Tile of a spec for a tileMode, and whether its content is periodic (needs wrapping).
  *  - 'frame': the target itself, not periodic.
  *  - 'period': the common period of all layers; when a layer has no period, or no common period
- *    exists, the tile falls back (warning recorded): no period -> frame; no common period -> fit.
- *  - 'fit': fitTiling (errors are not swallowed).
+ *    exists, the tile falls back (warning recorded): no period -> frame; no common period -> fit,
+ *    and when fit is impossible too (no period within ±5 % of the target) -> frame.
+ *  - 'fit': fitTiling; an explicit 'fit' never falls back: no period / no common period / more than
+ *    ±5 % raise GeometryError with the reason.
  * @param {object} drawSpec resolved spec with density applied
  * @param {{env:object, render:object, mode:string, target:{width:number,height:number}}} ctx
  * @returns {{mode:'frame'|'period'|'fit', periodic:boolean, tile:{width:number,height:number}, fit:{x:number,y:number}, adjust:(object|null), warnings:string[]}}
@@ -359,19 +366,37 @@ export function computeTile(drawSpec, ctx) {
   }
   const T = commonPeriod(per.map((p) => p.period));
   if (T) return { mode: 'period', periodic: true, tile: { width: T.w, height: T.h }, fit: UNIT_FIT, adjust: null, warnings };
+  // No common period: round to the target (fit); when that is impossible too, use the target as is.
+  let t;
+  try {
+    t = fitTiling(drawSpec, env, render, target, 'tileMode "period" fallback to fit');
+  } catch (e) {
+    if (!(e instanceof GeometryError)) throw e;
+    warnings.push(`tileMode "period": no common period among the layers and no fit within ±5 % (${e.message}); the tile falls back to the target size (frame, not seamless)`);
+    return frameTile;
+  }
   warnings.push(`tileMode "period": no common period among the layers; fitted to ${fmt(target.width)} x ${fmt(target.height)} pt (within ±5 %)`);
-  const t = fitTiling(drawSpec, env, render, target, 'tileMode "period" fallback to fit');
   return { mode: 'fit', periodic: true, tile: t.tile, fit: t.fit, adjust: t.adjust, warnings };
 }
 
 /**
  * Add the periodic copies of domain primitives that meet `rect` (the copies are the shifts by
- * whole tiles, each applied once). Each individual is in the domain once, so nothing is doubled.
+ * whole tiles, each applied once). Each individual is in the domain once, so nothing is doubled;
+ * exact duplicates (a line on the tile edge clipped into both edges) are written once.
  * @param {object[]} prims domain primitives (pt) @param {{width:number,height:number}} tile
  * @param {{x0:number,y0:number,x1:number,y1:number}} rect @param {number} halo half the stroke width
  */
 export function wrapToRect(prims, tile, rect, halo) {
   const out = [];
+  // A line archetype clips to the closed tile, so a line lying ON a tile edge (y = 0 and y = h) is the
+  // same individual twice; its copies coincide exactly. Exact duplicates (1e-6 pt) are written once.
+  const seen = new Set();
+  const push = (q) => {
+    const key = JSON.stringify(q, (k, v) => (typeof v === 'number' ? Math.round(v * 1e6) : v));
+    if (seen.has(key)) return;
+    seen.add(key);
+    out.push(q);
+  };
   for (const p of prims) {
     const b = bbox(p);
     const i0 = Math.ceil((rect.x0 - halo - b.maxX) / tile.width);
@@ -380,7 +405,7 @@ export function wrapToRect(prims, tile, rect, halo) {
     const j1 = Math.floor((rect.y1 + halo - b.minY) / tile.height);
     for (let i = i0; i <= i1; i++) {
       for (let j = j0; j <= j1; j++) {
-        out.push(i === 0 && j === 0 ? p : transformPrimitive(p, { x: i * tile.width, y: j * tile.height }));
+        push(i === 0 && j === 0 ? p : transformPrimitive(p, { x: i * tile.width, y: j * tile.height }));
       }
     }
   }
@@ -433,41 +458,85 @@ export function colorsOf(drawSpec) {
 // ---------------------------------------------------------------------------
 
 /**
+ * The scene every backend draws (SVG, <pattern>, Canvas/PNG): one pipeline, so the backends cannot
+ * drift apart (CONVENTIONS §7.5).
+ *   resolve spec + options -> computeTile -> computeLayers (in the tile) -> periodic copies over the
+ *   output rectangle (wrapToRect) -> blend 'knockout' -> primitive limit.
+ * @param {object} spec full spec (not an id) @param {object} [options] @param {{env?:object}} [deps]
+ * @param {{defaultTileMode?:'frame'|'period'|'fit', output?:'region'|'tile'}} [o]
+ *   defaultTileMode: used when options.tileMode is absent (renderSVG: 'frame', <pattern>: 'period');
+ *   output: 'region' fills the requested region (SVG, Canvas, PNG); 'tile' fills one tile (<pattern>).
+ * @returns {{spec:object, drawSpec:object, render:object, colors:{ink:string,paper:string},
+ *   region:{x:number,y:number,width:number,height:number}, out:{x:number,y:number,width:number,height:number},
+ *   tiling:object, layers:Array<{id:string, clip:boolean, primitives:object[]}>, prims:Record<string,object[]>,
+ *   counts:object, warnings:string[]}} layers are in draw (z) order
+ */
+export function buildScene(spec, options = {}, deps = {}, o = {}) {
+  const env = deps.env ?? DEFAULT_ENV;
+  const r = resolveSpec(spec, options, env);
+  const { drawSpec: s, render } = r;
+  const mode = options.tileMode ?? o.defaultTileMode ?? render.tileMode;
+  const colors = colorsOf(s);
+  const region = { x: 0, y: 0, width: render.region.width, height: render.region.height };
+  const warnings = [...r.warnings];
+  const halo = render.strokeWidth / 2;
+
+  const tiling = computeTile(s, { env, render, mode, target: { width: region.width, height: region.height } });
+  warnings.push(...tiling.warnings);
+  const tileRegion = { x: 0, y: 0, width: tiling.tile.width, height: tiling.tile.height };
+  const computed = computeLayers(s, env, render, { region: tileRegion, tileMode: tiling.periodic ? 'period' : 'frame', fit: tiling.fit });
+  warnings.push(...computed.warnings);
+
+  const out = o.output === 'tile' ? tileRegion : region;
+  const rect = { x0: out.x, y0: out.y, x1: out.x + out.width, y1: out.y + out.height };
+  let prims = {};
+  for (const layer of s.layers) {
+    const domain = computed.results[layer.id].primitives;
+    prims[layer.id] = tiling.periodic ? wrapToRect(domain, tiling.tile, rect, halo) : domain;
+  }
+  const order = zOrder(s.layers);
+  const knock = { removed: {} };
+  if (s.layers.some((l) => l.blend === 'knockout')) {
+    const k = applyKnockout(order, prims);
+    prims = k.prims;
+    knock.removed = k.removed;
+    for (const [id, n] of Object.entries(k.removed)) if (n > 0) warnings.push(`layer ${id}: ${n} primitive(s) removed by blend "knockout"`);
+  }
+  let total = 0;
+  for (const layer of s.layers) total += prims[layer.id].length;
+  checkPrimitiveLimit(total, 'output');
+
+  return {
+    spec: r.spec,
+    drawSpec: s,
+    render,
+    colors,
+    region,
+    out,
+    tiling,
+    layers: order.map((l) => ({ id: l.id, clip: Boolean(l.clip ?? s.clip), primitives: prims[l.id] })),
+    prims,
+    counts: { layers: computed.counts.layers, instances: computed.counts.instances, primitives: total, knockout: knock.removed },
+    warnings,
+  };
+}
+
+/**
  * Draw a spec to an SVG string (synchronous core; `spec` must be a full spec, not an id).
  * tileMode 'frame' draws the region once; 'period' and 'fit' fill the region with the tile.
  * @param {object} spec @param {object} [options] @param {{env?:object}} [deps]
  * @returns {import('../core/types.js').RenderResult}
  */
 export function renderSpecToSVG(spec, options = {}, deps = {}) {
-  const env = deps.env ?? DEFAULT_ENV;
-  const r = resolveSpec(spec, options, env);
-  const { drawSpec: s, render } = r;
-  const colors = colorsOf(s);
-  const region = { x: 0, y: 0, width: render.region.width, height: render.region.height };
-  const warnings = [...r.warnings];
-  const halo = render.strokeWidth / 2;
-
-  const tiling = computeTile(s, { env, render, mode: render.tileMode, target: { width: region.width, height: region.height } });
-  warnings.push(...tiling.warnings);
-  const tileRegion = { x: 0, y: 0, width: tiling.tile.width, height: tiling.tile.height };
-  const computed = computeLayers(s, env, render, { region: tileRegion, tileMode: tiling.periodic ? 'period' : 'frame', fit: tiling.fit });
-  warnings.push(...computed.warnings);
-
-  const prims = {};
-  let total = 0;
-  for (const layer of s.layers) {
-    const domain = computed.results[layer.id].primitives;
-    prims[layer.id] = tiling.periodic ? wrapToRect(domain, tiling.tile, { x0: 0, y0: 0, x1: region.width, y1: region.height }, halo) : domain;
-    total += prims[layer.id].length;
-  }
-  checkPrimitiveLimit(total, 'output');
+  const sc = buildScene(spec, options, deps, { defaultTileMode: 'frame', output: 'region' });
+  const { drawSpec: s, render, colors, region, tiling } = sc;
 
   const anyClip = s.layers.some((l) => l.clip ?? s.clip);
   const clipId = `${render.idPrefix}-clip`;
   const defs = anyClip ? `<clipPath id="${escapeXml(clipId)}"><rect ${attrs({ x: 0, y: 0, width: region.width, height: region.height })}/></clipPath>` : '';
   const parts = [];
   if (s.ground === 'paper') parts.push(paperRect(region, colors));
-  parts.push(contentMarkup(s, render, colors, prims, anyClip ? clipId : null));
+  parts.push(contentMarkup(s, render, colors, sc.prims, anyClip ? clipId : null));
   if (s.frame.show === 'ink') {
     // inset by half the line width so the whole frame line is visible inside the viewBox (CONVENTIONS §3.4)
     const lw = s.frame.lineWidth;
@@ -481,13 +550,14 @@ export function renderSpecToSVG(spec, options = {}, deps = {}) {
       width: fromPt(region.width, render.unit, render.dpi),
       height: fromPt(region.height, render.unit, render.dpi),
       unit: render.unit,
+      dpi: render.dpi,
       region: { width: region.width, height: region.height },
       density: render.density,
       strokeWidth: render.strokeWidth,
       colors,
       tiling: { mode: tiling.mode, periodic: tiling.periodic, tile: tiling.tile, fit: tiling.fit, adjust: tiling.adjust },
-      warnings,
-      counts: { layers: computed.counts.layers, instances: computed.counts.instances, primitives: total },
+      warnings: sc.warnings,
+      counts: sc.counts,
     },
   };
 }

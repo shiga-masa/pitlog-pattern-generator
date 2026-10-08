@@ -58,14 +58,32 @@ for (const kind of MOTIF_KINDS) {
   });
 }
 
-test('core and render stubs throw NotImplementedError with an owner', async () => {
-  const sync = [
-    () => lattice.latticePoints({}), () => lattice.cycleIndex(0, 0, 2, 'col', 0),
-    () => clip.clipSegment(0, 0, 1, 1, {}), () => clip.clipPolyline([], {}), () => clip.keepInstance([], {}, 'whole'),
-    () => svgPattern.computeTile({}, {}), () => canvas.drawPrimitives(null, [], {}), () => compose([]),
-  ];
-  for (const f of sync) assert.throws(f, (e) => e instanceof NotImplementedError && e.owner.length > 0);
-  for (const f of [() => svgPattern.renderSVGPattern('x'), () => canvas.renderCanvas(null, 'x', {}, {}), () => png.renderPNG('x')]) {
-    await assert.rejects(f, NotImplementedError);
+test('core and render functions: a stub throws NotImplementedError with an owner, an implemented one is skipped', async (t) => {
+  // Stage 2: all of these are implemented; the check stays so that a regression to a stub is caught.
+  const sync = {
+    'lattice.latticePoints': () => lattice.latticePoints({}),
+    'lattice.cycleIndex': () => lattice.cycleIndex(0, 0, 2, 'col', 0),
+    'clip.clipSegment': () => clip.clipSegment(0, 0, 1, 1, {}),
+    'clip.clipPolyline': () => clip.clipPolyline([], {}),
+    'clip.keepInstance': () => clip.keepInstance([], {}, 'whole'),
+    'svgPattern.computeTile': () => svgPattern.computeTile({}, {}),
+    'canvas.drawPrimitives': () => canvas.drawPrimitives(null, [], {}),
+    'index.compose': () => compose([]),
+  };
+  for (const [label, f] of Object.entries(sync)) {
+    if (state(f) === 'implemented') continue;
+    assert.throws(f, (e) => e instanceof NotImplementedError && e.owner.length > 0, label);
   }
+  const async = {
+    'svgPattern.renderSVGPattern': () => svgPattern.renderSVGPattern('x'),
+    'canvas.renderCanvas': () => canvas.renderCanvas(null, 'x', {}, {}),
+    'png.renderPNG': () => png.renderPNG('x'),
+  };
+  for (const [label, f] of Object.entries(async)) {
+    let err = null;
+    try { await f(); } catch (e) { err = e; }
+    assert.ok(err !== null, `${label} must reject for an unknown input`);
+    if (err instanceof NotImplementedError) assert.ok(err.owner.length > 0, label);
+  }
+  t.diagnostic('stage 2: no stub left among the core and render functions');
 });

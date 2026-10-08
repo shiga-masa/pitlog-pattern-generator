@@ -28,7 +28,7 @@ export const FRAME_LINE_WIDTH = Object.freeze({
 /**
  * Per-table defaults merged UNDER the spec's own values (spec wins).
  * Table 3-9: frame drawn, cap butt (R2 §62). Tables 4-1/4-2: frame drawn, sw 0.2 (R3 §0.3).
- * Table 4-3: no frame, sw 0.239 (design §1.5.9). Tables 5-x hold aliases only.
+ * Table 4-3: no frame, sw 0.239 (design §1.5.9). Tables 5-1/5-2/5-3 hold aliases only (of 4-1/4-2/4-3).
  */
 const TABLE_DEFAULTS = {
   rock: { frame: { ...FRAMES.rock, show: 'none', lineWidth: FRAME_LINE_WIDTH.standard }, stroke: { width: STROKE_WIDTH.rock, cap: 'round', join: 'miter' } },
@@ -39,7 +39,7 @@ const TABLE_DEFAULTS = {
 
 const FAMILY_OF_TABLE = {
   '3-1': 'rock', '3-2': 'rock', '3-3': 'rock', '3-4': 'rock', '3-5': 'rock', '3-6': 'rock', '3-7': 'rock', '3-8': 'rock',
-  '3-9': 'rockBand', '4-1': 'soil', '4-2': 'soil', '4-3': 'soilAux', '5-1': 'soil', '5-2': 'soil',
+  '3-9': 'rockBand', '4-1': 'soil', '4-2': 'soil', '4-3': 'soilAux', '5-1': 'soil', '5-2': 'soil', '5-3': 'soilAux',
 };
 
 /**

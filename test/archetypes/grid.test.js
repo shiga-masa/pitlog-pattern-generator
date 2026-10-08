@@ -284,23 +284,34 @@ test('period is null when the relation reference is not available yet', () => {
   assert.equal(period(layer, { results: {} }), null);
 });
 
-test('period tile wraps an instance that crosses the tile border to the opposite side', () => {
+test('period tile draws an instance that crosses the tile border once; the renderer makes the copies', () => {
+  // CONVENTIONS §3.3 period-tile contract: the archetype returns each individual once (wrapToRect copies).
   const layer = layerOf({ cols: 1, rows: 1 }, { motif: { kind: 'seg', length: 12 } });
   const r = renderGrid(testLattice, layer, ctxFor({ tileMode: 'period' }));
   assert.equal(r.placed, 1);
-  assert.equal(r.primitives.length, 3);
-  assert.deepEqual(r.primitives.map((p) => p.x1).sort((a, b) => a - b), [-11, -1, 9]);
+  assert.equal(r.primitives.length, 1);
+  assert.equal(r.primitives[0].x1, -1);
 });
 
-test('period render places each lattice cell once; a cell on the tile edge is also drawn at the opposite edge', () => {
-  // Odd row shifted by 5 pt in a 10 pt tile: its cell sits at x = 0 (= 10). The dot is drawn at x = 0 and
-  // at x = 10 so that both halves appear inside the tile (seamless).
+test('period render places each lattice cell once, at its position wrapped into the tile', () => {
+  // Odd row shifted by 5 pt in a 10 pt tile: its cell wraps to x = 0 (= 10) and is drawn there only.
   const layer = layerOf({ rowOffset: 0.5, cols: 1, rows: 2 }, { motif: { kind: 'dot', d: 2 } });
   const r = renderGrid(testLattice, layer, ctxFor({ tileMode: 'period' }));
   assert.equal(r.placed, 2);
-  assert.equal(r.primitives.length, 3);
+  assert.equal(r.primitives.length, 2);
   const centres = r.primitives.map((p) => [p.cx, p.cy]).sort((a, b) => a[1] - b[1] || a[0] - b[0]);
-  assert.deepEqual(centres, [[5, 4], [0, 12], [10, 12]]);
+  assert.deepEqual(centres, [[5, 4], [0, 12]]);
+});
+
+test('ctx.fit scales the pitch (and the period) but not the motif', () => {
+  const layer = layerOf({ cols: 2, rows: 1 }, { motif: { kind: 'dot', d: 2 } });
+  const fit = { x: 1.04, y: 0.98 };
+  const p = period(layer, { results: {}, fit });
+  assert.ok(Math.abs(p.w - 10 * 1.04) < 1e-9 && Math.abs(p.h - 8 * 0.98) < 1e-9, JSON.stringify(p));
+  const r = renderGrid(testLattice, layer, ctxFor({ tileMode: 'period', fit }));
+  assert.ok(Math.abs(r.pitch.x - 10.4) < 1e-9);
+  const ext = r.primitives[0];
+  assert.equal(ext.r ?? ext.rx ?? 1, 1);
 });
 
 test('render() passes the real lattice module; with the stub it fails with the lattice owner named', () => {

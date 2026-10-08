@@ -18,8 +18,13 @@
  * - relation: pitch = pitchRatio × pitch of `to`; phase shifts x by phase × pitch.x of `to`.
  *   The reference pitch is read from LayerResult.pitch (grid layers provide it).
  * - layer.offset is applied to the lattice by this archetype.
- * - tileMode 'period': the tile is colPeriod × rowPeriod cells; instances that cross the tile border
- *   are drawn again on the opposite side (seamless). edgeMode does not apply inside a period tile.
+ * - tileMode 'period': the tile is colPeriod × rowPeriod cells; every cell is drawn ONCE at its
+ *   position wrapped into the tile (CONVENTIONS §3.3 period-tile contract). The copies across the
+ *   tile edges are made by the renderer (render/svg.js wrapToRect), not here. edgeMode does not apply
+ *   inside a period tile.
+ * - ctx.fit (tileMode 'fit'): pitchX, pitchY and a pt rowOffset are multiplied by fit.x / fit.y; the
+ *   motifs keep their size. A layer tied by `relation` takes its pitch from the reference layer,
+ *   which is already fitted.
  */
 
 import * as lattice from '../core/lattice.js';
@@ -81,7 +86,7 @@ export function period(layer, ctx) {
   if (layer.relation && !ctx.results?.[layer.relation.to]) return null;
   const pitch = pitchOf(layer, ctx, []);
   const n = motifsOf(layer).length;
-  const t = tileOf(layer.params, pitch, rowOffsetPt(layer.params.rowOffset, pitch.pitchX), n);
+  const t = tileOf(layer.params, pitch, rowOffsetPt(layer.params.rowOffset, pitch.pitchX, pitch.fitX), n);
   return { w: t.w, h: t.h };
 }
 
@@ -100,7 +105,7 @@ export function renderGrid(lat, layer, ctx) {
   const base = motifs.map((m) => ctx.buildMotif(m));
   const exts = motifs.map((m) => ctx.motifExtent(m));
   const pitch = pitchOf(layer, ctx, warnings);
-  const ro = rowOffsetPt(p.rowOffset, pitch.pitchX);
+  const ro = rowOffsetPt(p.rowOffset, pitch.pitchX, pitch.fitX);
   const ext = { w: Math.max(...exts.map((e) => e.w)), h: Math.max(...exts.map((e) => e.h)) };
   const ow = overlapWarning({ extent: ext, pitchX: pitch.pitchX, pitchY: pitch.pitchY, strokeWidth: ctx.strokeWidth, layerId: layer.id });
   if (ow) warnings.push(ow);
@@ -181,13 +186,8 @@ function drawPeriod({ lat, layer, p, n, base, pitch, ro, warnings, ctx }) {
       continue;
     }
     anchors.push({ x, y, row: c.row, col: c.col });
-    for (let i = -1; i <= 1; i++) {
-      for (let j = -1; j <= 1; j++) {
-        const prims = place(base[k], x + i * w, y + j * h, rot, mirror);
-        if (!bboxIntersects(bboxOf(prims), tile)) continue;
-        for (const q of prims) primitives.push(q);
-      }
-    }
+    // once per cell; the renderer adds the copies across the tile edges (CONVENTIONS §3.3)
+    for (const q of place(base[k], x, y, rot, mirror)) primitives.push(q);
   }
   return finish(layer, { primitives, anchors, skipped, candidates: cells.length, warnings, pitch });
 }
@@ -220,7 +220,8 @@ function motifsOf(layer) {
 function pitchOf(layer, ctx, warnings) {
   const p = layer.params;
   const rel = layer.relation;
-  if (!rel) return { pitchX: p.pitchX, pitchY: p.pitchY, shiftX: 0 };
+  const fit = ctx.fit ?? { x: 1, y: 1 };
+  if (!rel) return { pitchX: p.pitchX * fit.x, pitchY: p.pitchY * fit.y, shiftX: 0, fitX: fit.x };
   const ref = ctx.results?.[rel.to];
   if (!ref) throw new GeometryError(`grid layer ${layer.id}: relation.to "${rel.to}" is not an earlier layer`);
   if (!ref.pitch) throw new GeometryError(`grid layer ${layer.id}: relation.to "${rel.to}" exposes no lattice pitch (it must be a grid layer)`);
@@ -230,12 +231,13 @@ function pitchOf(layer, ctx, warnings) {
   if (Math.abs(p.pitchX - pitchX) > 1e-3 || Math.abs(p.pitchY - pitchY) > 1e-3) {
     warnings.push(`params pitch (${p.pitchX}, ${p.pitchY}) ignored; relation to "${rel.to}" gives (${pitchX.toFixed(3)}, ${pitchY.toFixed(3)})`);
   }
-  return { pitchX, pitchY, shiftX: (rel.phase ?? 0) * ref.pitch.x };
+  return { pitchX, pitchY, shiftX: (rel.phase ?? 0) * ref.pitch.x, fitX: 1 };
 }
 
-function rowOffsetPt(ro, pitchX) {
+/** Odd-row shift in pt: a ratio of the (fitted) pitchX, or a pt value scaled by the x fit. */
+function rowOffsetPt(ro, pitchX, fitX = 1) {
   if (typeof ro === 'number') return ro * pitchX;
-  if (ro && typeof ro === 'object' && typeof ro.pt === 'number') return ro.pt;
+  if (ro && typeof ro === 'object' && typeof ro.pt === 'number') return ro.pt * fitX;
   throw new GeometryError(`grid: rowOffset must be a ratio or {pt}, got ${JSON.stringify(ro)}`);
 }
 

@@ -5,16 +5,19 @@
  * fully; joints run between two neighbouring course lines, staggered by `stagger` * brickLength
  * per course, and lean by courseHeight * cot(jointAngle) within one course. The whole field is
  * rotated by `angle` about the anchor point. Everything is clipped geometrically to the region.
+ * Stage 2: layer.offset shifts the anchor; ctx.fit is honoured by drawing unfitted and stretching
+ * (core/fit.js drawStretched); period() is scaled by the fit.
  *
  * Edit only this file (and test/archetypes/brick.test.js). PARAMS is the single source of truth for
  * this archetype's parameters: validation, defaults and density scaling all read it.
  */
 
 import { GeometryError } from '../core/errors.js';
-import { clipSegment } from '../core/clip.js';
+import { clipSegmentProper as clipSegment } from '../core/clip.js';
 import { dir, rotatePoint } from '../core/geom.js';
 import { line } from '../core/primitives.js';
 import { angle, enumOf, len, obj, ratio } from '../core/schema.js';
+import { drawStretched, fitPeriod, offsetOf } from '../core/fit.js';
 
 export const ARCHETYPE = 'brick';
 
@@ -114,6 +117,10 @@ function staggerRepeat(s) {
  * @returns {import('../core/types.js').LayerResult}
  */
 export function render(layer, ctx) {
+  return drawStretched(ctx, (c) => renderUnfitted(layer, c));
+}
+
+function renderUnfitted(layer, ctx) {
   const p = layer.params;
   const region = ctx.region;
   const h = p.courseHeight;
@@ -129,7 +136,9 @@ export function render(layer, ctx) {
   if (h < ctx.strokeWidth) warnings.push(`brick: courseHeight ${h} pt is not larger than stroke width ${ctx.strokeWidth} pt; courses will merge`);
   if (L < ctx.strokeWidth) warnings.push(`brick: brickLength ${L} pt is not larger than stroke width ${ctx.strokeWidth} pt; joints will merge`);
 
-  const A = anchorOf(ctx.origin, region);
+  const A0 = anchorOf(ctx.origin, region);
+  const off = offsetOf(layer);
+  const A = { x: A0.x + off.x, y: A0.y + off.y };
   const rect = { x: region.x, y: region.y, width: region.width, height: region.height };
   const rot = p.angle;
   const u = dir(rot);
@@ -190,6 +199,10 @@ export function render(layer, ctx) {
  * @returns {{w:number, h:number} | null}
  */
 export function period(layer, ctx) {
+  return fitPeriod(unfittedPeriod(layer), ctx);
+}
+
+function unfittedPeriod(layer) {
   const p = layer.params;
   const j = staggerRepeat(p.stagger);
   if (j === null) return null;

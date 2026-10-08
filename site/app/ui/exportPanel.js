@@ -4,7 +4,7 @@
  * A PNG request over the pixel limit is refused with the reason and candidate values (CONVENTIONS 9).
  */
 
-import { renderSVG, renderPNG, getPreset } from '../../../src/index.js';
+import { renderSVG, renderPNG, toSpec } from '../../../src/index.js';
 import { toPt, fromPt, ptToPixels } from '../../../src/core/units.js';
 import { LIMITS } from '../../../src/core/defaults.js';
 import { buildRenderOptions } from '../state.js';
@@ -65,10 +65,13 @@ export function mountExportPanel(container, props) {
   });
   exportBtn.addEventListener('click', () => { runExport(); });
 
-  /** Frame of the current preset in pt, or null when no preset is selected. */
+  /**
+   * Frame of the current preset in pt, or null when no preset is selected. The frame is optional in
+   * a preset (table defaults fill it), so it is read from the resolved spec (toSpec), not getPreset.
+   */
   function presetFramePt(presetId) {
     if (presetId === null || presetId === undefined) return null;
-    const spec = getPreset(presetId);
+    const spec = toSpec(presetId);
     return { width: spec.frame.width, height: spec.frame.height };
   }
 

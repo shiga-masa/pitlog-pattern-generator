@@ -79,6 +79,20 @@ export function clipSegment(x1, y1, x2, y2, rect) {
   return [sx, sy, ex, ey];
 }
 
+/** Shortest clipped segment kept by clipSegmentProper (pt): a line that only touches a corner is dropped. */
+export const MIN_SEGMENT_LENGTH = 1e-6;
+
+/**
+ * clipSegment, but a segment that only touches the rect (a point, e.g. a 45° hatch line through a
+ * corner) counts as outside (null). Without this a round cap would paint a dot. Stage 2.
+ * @returns {[number, number, number, number] | null}
+ */
+export function clipSegmentProper(x1, y1, x2, y2, rect) {
+  const s = clipSegment(x1, y1, x2, y2, rect);
+  if (!s) return null;
+  return Math.hypot(s[2] - s[0], s[3] - s[1]) > MIN_SEGMENT_LENGTH ? s : null;
+}
+
 /**
  * Clip a polyline; may split into several pieces.
  * A piece continues across an original vertex that lies inside the rect; it is cut where a segment

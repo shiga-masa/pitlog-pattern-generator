@@ -15,8 +15,6 @@
  *     region here; instance-level fitting is done by keepInstance (edgeMode) in core/clip.js.
  */
 
-import { GeometryError } from './errors.js';
-
 const LATTICE_KEYS = ['region', 'pitchX', 'pitchY', 'rowOffsetPt', 'rows', 'cols', 'origin', 'tileMode'];
 const TILE_MODES = ['frame', 'period', 'fit'];
 const ASSIGNS = ['col', 'row', 'rowcol'];
@@ -103,8 +101,8 @@ const mod = (a, n) => ((a % n) + n) % n;
  * Index into a cycle of length n for lattice cell (row, col).
  *  - 'col':    (col + row + phase) mod n  (alternates along a row; phase flips every row)
  *  - 'row':    (row + phase) mod n        (constant along a row; changes with each row)
- *  - 'rowcol': no rule is defined in the material given to core-A (R2 §47 was not provided).
- *              Only n = 1 is answered (index 0 under any rule); n > 1 raises GeometryError.
+ *  - 'rowcol': (2·col + (row mod 2) + phase) mod n, the x-position index on the half-pitch grid of a
+ *              lattice staggered by 1/2 (R2 §47; fixed in stage 2, the same rule archetypes/grid.js assumes).
  * @param {number} row @param {number} col @param {number} n @param {'col'|'row'|'rowcol'} assign @param {0|1} phase
  * @returns {number}
  */
@@ -116,9 +114,7 @@ export function cycleIndex(row, col, n, assign, phase) {
   switch (assign) {
     case 'col': return mod(col + row + phase, n);
     case 'row': return mod(row + phase, n);
-    case 'rowcol':
-      if (n === 1) return 0;
-      throw new GeometryError(`cycleIndex: assign 'rowcol' with a cycle of ${n} motifs has no defined rule in the source material available to core-A (R2 §47 not provided); use 'col' or 'row', or a single motif`);
+    case 'rowcol': return mod(2 * col + mod(row, 2) + phase, n);
     default:
       throw new RangeError(`cycleIndex: assign must be one of ${ASSIGNS.join(', ')}, got ${JSON.stringify(assign)}`);
   }

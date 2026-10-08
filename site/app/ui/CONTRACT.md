@@ -107,7 +107,7 @@ export function mountXxx(container, props) -> { update(state): void, destroy(): 
 - エラー・警告はモジュール内に表示する(握りつぶさない)。ライブラリの例外は `error.message` を画面に出す。
 - 日本語の表示文言。色は `--earth` と `--white` の CSS 変数だけを使う(モジュール内で色を書かない。ink/paper の値は `buildRenderOptions` が渡す)。
 - 罫線は実線のみ。角丸・影・半透明・イタリック・グラデーションを使わない。
-- 基本の要素スタイル(button, input, textarea, 見出し, 余白, 2 列レイアウト)は `site/assets/style.css` が持つ。モジュール固有のスタイルは担当が次のファイルに書く(index.html に link 済み): `site/assets/ui/presetPicker.css`, `site/assets/ui/paramPanel.css`, `site/assets/ui/preview.css`, `site/assets/ui/exportPanel.css`。`style.css` は app-1 だけが編集する。
+- 基本の要素スタイル(button, input, textarea, 見出し, 余白, 2 列レイアウト)は `site/assets/style.css` が持つ。モジュール固有のスタイルは担当が次のファイルに書く(index.html に link 済み): `site/assets/ui/presetPicker.css`, `site/assets/ui/paramPanel.css`。preview.js と exportPanel.js はスタイルを要素の style 属性で持つ(`--earth` / `--white` のみ)ので CSS ファイルは無い(段階 2 で index.html の存在しない link を削除)。`style.css` は app-1 だけが編集する。
 - 携帯幅(360 px)で横スクロールを出さない。左右の余白は body の 16 px。
 
 ---
@@ -166,6 +166,12 @@ mountExportPanel(container, {
 ---
 
 ## 5. 未決定(app-1 の判断で仮に決めたもの)
-- `output.width/height` の null は「プリセット枠」。枠の値は `getPreset()` の `frame`(pt)から換算する。
+- `output.width/height` の null は「プリセット枠」。枠の値は `toSpec(presetId).frame`(pt、表ごとの既定を適用済み)から換算する。`getPreset()` の `frame` は省略されていることがある(段階 2 で修正)。
 - 初期状態は `presetId: null`(既定プリセットは持たない。黙って選ばない)。
-- Pages への配置: `site/` が `../src/index.js` を読むため、公開時はリポジトリ全体(または `src/` を含む配信ルート)を配る必要がある。配信方法は未決定(親に確認事項として報告)。
+## 6. 配信構成(段階 2 で決定)
+
+- GitHub Pages は **リポジトリのルート**(main ブランチの `/`)を配信する。`site/` と `src/` が同じ配信ルートに入るので、`site/app/main.js` の `'../../src/index.js'` と `site/app/ui/*.js` の `'../../../src/index.js'` がそのまま解決する。ビルドもコピーも不要。
+- ルートの `index.html` は `./site/` へ移動するだけのページ(土色と白の 2 色)。`.nojekyll` で Jekyll の加工を止め、`src/` の ES モジュールを原文のまま配る。
+- 公開 URL: `https://<user>.github.io/<repo>/site/`。ライブラリは `https://<user>.github.io/<repo>/src/index.js` から第三者も import できる(設計書 §6.1)。
+- `test/` と `docs/` も配信されるが、原本由来のファイルは含まない(`.gitignore` と CONVENTIONS §1)。
+- 確認方法: リポジトリのルートで `python3 -m http.server` を起動し `http://127.0.0.1:8000/site/` を開く。

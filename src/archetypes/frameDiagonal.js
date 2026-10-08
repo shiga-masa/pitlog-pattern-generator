@@ -8,12 +8,15 @@
  * count 2 draws a pair of parallel lines whose horizontal distance is `gap`; the pair is placed
  * symmetrically about the diagonal (each line offset by gap/2 horizontally). This placement is a
  * provisional decision (see the report of arch-3).
+ * Stage 2: the lines are tied to the frame corners, so spec.origin is not used and a non-zero
+ * layer.offset is rejected (GeometryError) rather than ignored.
  */
 
 import { GeometryError } from '../core/errors.js';
 import { line } from '../core/primitives.js';
-import { clipSegment } from '../core/clip.js';
+import { clipSegmentProper as clipSegment } from '../core/clip.js';
 import { enumOf, fixed, obj } from '../core/schema.js';
+import { fitPeriod, offsetOf } from '../core/fit.js';
 
 const OWNER = 'arch-3';
 
@@ -45,6 +48,8 @@ export function render(layer, ctx) {
   const p = layer.params;
   const { x: x0, y: y0, width: W, height: H } = ctx.region;
   if (!(W > 0 && H > 0)) throw new GeometryError(`frameDiagonal ${layer.id}: region must have positive size, got ${W} x ${H}`);
+  const off = offsetOf(layer);
+  if (off.x !== 0 || off.y !== 0) throw new GeometryError(`frameDiagonal ${layer.id}: the lines join the frame corners; layer.offset (${off.x}, ${off.y}) cannot be applied`);
   if (p.count === 2 && !(p.gap > 0)) throw new GeometryError(`frameDiagonal ${layer.id}: count 2 needs gap > 0 (got ${p.gap}); the two lines would coincide`);
 
   const TL = { x: x0, y: y0 };
@@ -91,5 +96,5 @@ export function render(layer, ctx) {
  * @returns {{w:number, h:number} | null}
  */
 export function period(layer, ctx) {
-  return { w: ctx.region.width, h: ctx.region.height };
+  return fitPeriod({ w: ctx.region.width, h: ctx.region.height }, ctx);
 }
