@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>柱状図模様ジェネレータ</title>
+<style>
+  /* Design: docs/CONVENTIONS.md §12. Exactly two colours; no other colour variables. */
+  :root {
+    --earth: #2b2420;
+    --white: #ffffff;
+  }
+  *, *::before, *::after { box-sizing: border-box; border-radius: 0; box-shadow: none; }
+  html { color-scheme: light; }
+  body {
+    margin: 0;
+    padding: 0 16px;
+    background: var(--white);
+    color: var(--earth);
+    font-family: system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+  }
+  header, main, footer { max-width: 960px; margin: 0 auto; }
+  header { padding: 24px 0 12px; border-bottom: 2px solid var(--earth); }
+  h1 { margin: 0; font-size: 1.5rem; font-weight: 700; }
+  main { padding: 24px 0; }
+  footer { padding: 12px 0 24px; border-top: 1px solid var(--earth); font-size: 0.875rem; }
+  a { color: var(--earth); }
+  ::selection { background: var(--earth); color: var(--white); }
+</style>
+</head>
+<body>
+<header><h1>柱状図模様ジェネレータ</h1></header>
+<main id="app"></main>
+<footer>CC0 1.0 Universal</footer>
+<script type="module" src="./main.js"></script>
+</body>
+</html>

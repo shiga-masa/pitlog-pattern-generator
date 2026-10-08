@@ -1,0 +1,17 @@
+# Source drawings and anything derived from them never enter this repository
+# (they belong to the analysis project, not to the public release).
+*.pdf
+*.emf
+*.prim.json
+/data/
+/verify/
+# Generated output
+*.png
+*.svg
+/out/
+# Editors / OS
+.DS_Store
+.vscode/
+.idea/
+node_modules/
+*_tmp.*
