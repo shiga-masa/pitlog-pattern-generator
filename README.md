@@ -2,11 +2,9 @@
 
 ボーリング柱状図の図模様(岩盤・土質の地紋)を、パラメータから SVG と PNG で生成する JavaScript モジュールと、それをブラウザだけで使う静的サイトです。
 
-- 依存ライブラリなし、ビルド不要の ES モジュール。GitHub Pages にそのまま置けます。
+- 依存ライブラリなし、ビルド不要の ES モジュール。
 - すべての模様は「型(格子・ハッチ・波線・散布など)+ モチーフ + 数値パラメータ」で定義され、密度・寸法・色などを引数で変えられます。
 - 出力形式は SVG と PNG です。
-
-> **開発状況**: 段階 2(統合)まで。全プリセット(表 3-1〜3-9、4-1〜4-3、5-1〜5-3。表 5 は表 4 への別名)が登録され、SVG・SVG `<pattern>`・Canvas・PNG を生成できます。既定値の原本との照合は未了です。実装規約は [docs/CONVENTIONS.md](docs/CONVENTIONS.md) にあります。
 
 ## 使い方
 
@@ -47,11 +45,11 @@ npm test        # = node --test "test/**/*.test.js"(Node 22 以上、依存な�
 
 `test/presets/smoke.test.js` は全プリセットを公開 API で SVG・`<pattern>`・PNG に描き、例外・NaN・色(ink/paper の 2 色だけ)・viewBox を検査して、処理・スキップ・失敗の件数を出力します。
 
-## サイト(GitHub Pages)
+## サイト
 
 カタログ上部の「全件ダウンロード」で、カタログの全タイル(検索で絞り込み中でも全件)を既定設定(ink `#000000` / paper `#ffffff`、プリセット枠、PNG は 300 dpi)で `svg/<コード>_<名称>.svg` と `png/<コード>_<名称>.png` にした ZIP を保存できます。ZIP は依存なしの自前実装(`site/app/zip.js`、無圧縮)で、失敗した模様の件数と理由は画面に出ます(仕様は [site/app/ui/CONTRACT.md](site/app/ui/CONTRACT.md) §4.5)。
 
-GitHub Pages ではリポジトリのルートを配信します(ビルド不要)。ルートの `index.html` から `site/` に移ります。`site/` は `../src/index.js` を相対 import するので、`src/` も同じ配信ルートに入っている必要があります。手元では、リポジトリのルートで `python3 -m http.server` を起動して `http://127.0.0.1:8000/site/` を開きます。
+`site/` は `../src/index.js` を相対 import するので、`src/` も同じ配信ルートに入っている必要があります。手元では、リポジトリのルートで `python3 -m http.server` を起動して `http://127.0.0.1:8000/site/` を開きます。
 
 ## 出典と原本との関係
 
